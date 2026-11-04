@@ -1,0 +1,12 @@
+﻿using System;using System.IO;using System.Text;using System.Runtime.InteropServices;using System.Threading;using System.Windows.Forms;using Windows.ApplicationModel.Calls;using Windows.Devices.Enumeration;
+[assembly:System.Reflection.AssemblyFileVersion("0.1.0.6")]
+static class NativeAccess {
+ [DllImport("kernel32.dll",CharSet=CharSet.Unicode)]static extern int GetCurrentPackageFullName(ref uint length,StringBuilder name);
+ static Form window;static Label label;static string log="";
+ static void Record(string s){log+=s+Environment.NewLine;label.Text=s;var dir=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"PhoneDeck");Directory.CreateDirectory(dir);File.WriteAllText(Path.Combine(dir,"native-access.local.txt"),log);}
+ static void Wait(Func<Windows.Foundation.AsyncStatus> status){var end=DateTime.UtcNow.AddSeconds(15);while(status()==Windows.Foundation.AsyncStatus.Started&&DateTime.UtcNow<end){Application.DoEvents();Thread.Sleep(30);}if(status()!=Windows.Foundation.AsyncStatus.Completed)throw new Exception("Operation status="+status());}
+ [STAThread]static void Main(){Application.EnableVisualStyles();window=new Form{Text="PhoneDeck · Permissão Bluetooth",Width=520,Height=160,StartPosition=FormStartPosition.CenterScreen};label=new Label{Dock=DockStyle.Fill,Padding=new Padding(20),Text="Verificando o acesso à telefonia Bluetooth..."};window.Controls.Add(label);window.Shown+=(s,e)=>window.BeginInvoke(new Action(Run));Application.Run(window);}
+ static void Run(){try{uint n=0;int identity=GetCurrentPackageFullName(ref n,null);Record("IdentityResult="+identity);if(identity!=122&&identity!=0)throw new Exception("Package identity missing; permission not requested.");var devicesOp=DeviceInformation.FindAllAsync(PhoneLineTransportDevice.GetDeviceSelector());Wait(()=>devicesOp.Status);var devices=devicesOp.GetResults();Record("HfpTransports="+devices.Count);for(int i=0;i<devices.Count;i++){var transport=PhoneLineTransportDevice.FromId(devices[i].Id);Record("RegisteredBefore="+transport.IsRegistered());var access=transport.RequestAccessAsync();Wait(()=>access.Status);var result=access.GetResults();Record("Access="+result);if(result==DeviceAccessStatus.Allowed){transport.RegisterApp();Record("RegisteredAfter="+transport.IsRegistered());}}Record("Completed; no connection or call commands executed.");}catch(Exception e){Record("Error="+e.GetType().Name+";HRESULT="+e.HResult.ToString("X8")+";"+e.Message);Environment.ExitCode=1;}finally{window.Close();}}
+}
+
+

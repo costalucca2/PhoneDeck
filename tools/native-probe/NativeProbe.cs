@@ -1,0 +1,6 @@
+﻿using System;using System.Runtime.InteropServices;using System.Threading;using Windows.ApplicationModel.Calls;using Windows.Devices.Enumeration;
+[assembly:System.Reflection.AssemblyFileVersion("0.1.0.2")]
+static class NativeProbe {
+ [DllImport("kernel32.dll",CharSet=CharSet.Unicode)]static extern int GetCurrentPackageFullName(ref uint count,System.Text.StringBuilder name);
+ [MTAThread]static void Main(){uint n=0;Console.WriteLine("PackageIdentityResult="+GetCurrentPackageFullName(ref n,null));try{var operation=DeviceInformation.FindAllAsync(PhoneLineTransportDevice.GetDeviceSelector());var limit=DateTime.UtcNow.AddSeconds(8);while(operation.Status==Windows.Foundation.AsyncStatus.Started&&DateTime.UtcNow<limit)Thread.Sleep(50);if(operation.Status!=Windows.Foundation.AsyncStatus.Completed){Console.WriteLine("Enumeration="+operation.Status);return;}var devices=operation.GetResults();Console.WriteLine("HfpTransportCount="+devices.Count);for(int i=0;i<devices.Count;i++){try{var transport=PhoneLineTransportDevice.FromId(devices[i].Id);Console.WriteLine("Transport"+i+"Registered="+transport.IsRegistered());}catch(Exception e){Console.WriteLine("TransportError="+e.GetType().Name+";HRESULT="+e.HResult.ToString("X8"));}}}catch(Exception e){Console.WriteLine("ProbeError="+e.GetType().Name+";HRESULT="+e.HResult.ToString("X8"));}}
+}

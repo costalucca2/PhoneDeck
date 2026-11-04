@@ -66,3 +66,16 @@ Para futuras correções de desenho, conferir captura da tela real após alterna
 - Ligar/atender/desligar em chamada real não foram executados, conforme escolha do usuário.
 
 A ponte Phone Link é minimizada após os comandos; pode ficar visível durante o acionamento de sua interface. Não foi removida ou desinstalada.
+
+## 1.9.0.22 — assistente QR local
+
+- Testes de interface anteriores passaram novamente.
+- Biblioteca QRCoder embutida carregada sem DLL instalada separadamente.
+- Página em loopback: HTTP 200, instruções de iPhone e Android presentes; token incorreto retornou 404; POST retornou 405; Cache-Control no-store.
+- Página no IP privado do próprio PC respondeu HTTP 200. Isso não comprova acesso a partir de um celular; depende do Firewall e isolamento da rede.
+- QR extraído da captura real foi decodificado por OpenCV e correspondeu exatamente à URL temporária.
+- QR expira em 10 minutos e a página encerra quando o assistente fecha.
+- Nenhum contato, senha ou rota de chamada é servido. Não houve chamadas nem alterações no mudo ou no volume.
+- Registro nativo: pacote de diagnóstico assinado registrado, mas a ativação não completou. Controle Bluetooth independente de Phone Link ainda não implementado/validado.
+
+Capturas e URLs temporárias permanecem locais e fora do Git. Regra opcional de Firewall é específica para PhoneDeck.exe/TCP 40521/Private/LocalSubnet; não libera redes públicas.

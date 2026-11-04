@@ -104,3 +104,9 @@ powershell -STA -NoProfile -ExecutionPolicy Bypass -File tests\Test-Window.ps1
 Os atalhos podem apontar diretamente para PhoneDeck.exe. Após ligar, atender ou desligar, o auxiliar minimiza as janelas visíveis do Phone Link e retorna ao PhoneDeck; o contato acionado pelo teclado é selecionado na janela. Abrir `--ui` novamente foca a janela existente.
 
 O Microsoft Phone Link continua obrigatório como ponte Bluetooth. Sua janela pode aparecer brevemente para acionar os controles; esta integração não substitui a telefonia do Windows. Atender/Desligar restauram a ponte antes de procurar seus botões e devolvem o foco depois. Consultas `--check`, `--inspect`, `--answer-check` e `--snapshot` não mudam o foco por esse mecanismo. Microfone do Discord continua separado.
+
+## QR local para quem baixar o repositório
+
+Use **Conectar celular · QR** ou `PhoneDeck.exe --setup`. O celular abre um guia temporário pela rede local, sem domínio ou app no celular. Pareamento e permissões continuam sendo confirmados nos aparelhos. [Guia completo](docs/CONECTAR-CELULAR.md).
+
+A biblioteca QRCoder 1.8.1 (MIT) é baixada com hash fixo no build e embutida no executável. A geração do QR e a página funcionam localmente, sem servidor externo.
