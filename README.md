@@ -71,3 +71,6 @@ Licença MIT: uso comercial, modificação e redistribuição permitidos com man
 
 Use `--discord-microfone` para alternar o mudo exclusivo do Discord desktop. Abre/restaura sua janela e envia Ctrl+Shift+M somente após confirmar o processo em primeiro plano. Não altera o mudo global. O comando enviado não confirma o estado final do Discord.
 
+
+O controle de estado real com ícone vermelho/verde depende de integração autenticada com o Discord. Os ícones estão em assets; o atalho básico não comprova nem sincroniza o estado. A integração ainda está pendente. Avisos de áudio não bloqueiam mais o próximo comando.
+

@@ -21,6 +21,7 @@ static class DiscordMic {
   uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);
   if(pid!=(uint)window.Id)throw new Exception("Discord não recebeu foco. Nenhum atalho foi enviado.");
   SendKeys.SendWait("^+m");
-  AudioActions.Notice("Mic Discord: comando de silenciar/reativar enviado. Microfone do Windows preservado.");
+  File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"discord-microfone.local.txt"),DateTime.Now.ToString("o")+" Toggle command sent; actual Discord mute state unverified.");
  }
 }
+

@@ -42,7 +42,8 @@ static class AudioActions {
   if(toggle||on||off){Notice(Microphone(on?(bool?)false:off?(bool?)true:null,toggle));return true;}return false;
  }
  sealed class Toast:Form {protected override bool ShowWithoutActivation{get{return true;}} protected override CreateParams CreateParams{get{var p=base.CreateParams;p.ExStyle|=0x08000000|0x80;return p;}}}
- public static void Notice(string message){
+ public static void Notice(string message){Process.Start(new ProcessStartInfo(Application.ExecutablePath,"--notice "+Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(message))){UseShellExecute=false,CreateNoWindow=true});}
+ public static void ShowNotice(string message){
   File.AppendAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"phonedeck-status.local.log"),DateTime.Now.ToString("o")+" "+message+Environment.NewLine);
   using(var f=new Toast())using(var timer=new System.Windows.Forms.Timer()){
    f.FormBorderStyle=FormBorderStyle.None;f.TopMost=true;f.ShowInTaskbar=false;f.Size=new Size(460,105);f.BackColor=Color.FromArgb(25,25,28);
@@ -52,3 +53,4 @@ static class AudioActions {
   }
  }
 }
+
