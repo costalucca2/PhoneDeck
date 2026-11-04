@@ -24,3 +24,8 @@ Avisos de áudio passaram a executar fora do processo da ação. A ação de con
 
 Oito verificações dos nomes de botões passaram, incluindo rejeição de Ligar, Desligar e Recusar. A leitura das janelas reais não encontrou chamada recebida e não enviou ação. Atendimento real ainda não validado; o comando atua somente quando o Phone Link exibe botão de atendimento visível e habilitado.
 
+
+## 1.6.0.12 — janela desktop
+
+Janela instalada aberta e conferida visualmente: seis contatos locais visíveis, Ligar/Atender/Desligar e controle de microfone. Verificação independente de acessibilidade confirmou os cinco controles/indicadores esperados e janela respondendo. O microfone real foi lido como silenciado e exibido em vermelho. Nenhuma chamada foi iniciada, atendida ou encerrada na verificação; o mudo foi preservado. Capturas e contatos permanecem fora do repositório.
+

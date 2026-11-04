@@ -4,10 +4,10 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Threading;
 using Windows.System;
-[assembly:System.Reflection.AssemblyVersion("1.5.0.10")]
-[assembly:System.Reflection.AssemblyFileVersion("1.5.0.10")]
+[assembly:System.Reflection.AssemblyVersion("1.6.0.12")]
+[assembly:System.Reflection.AssemblyFileVersion("1.6.0.12")]
 static class PhoneDeck {
- [STAThread]static void Main(string[] args){PhoneDirectDial.Initialize();if(args.Length==2&&args[0]=="--notice"){AudioActions.ShowNotice(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(args[1])));return;}bool first;using(var mutex=new Mutex(true,"Local\\PhoneDeck",out first)){if(first)Run(args);}}
+ [STAThread]static void Main(string[] args){PhoneDirectDial.Initialize();if(args.Length==0||Array.IndexOf(args,"--ui")>=0){Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);Application.Run(new PhoneDeckWindow(Array.IndexOf(args,"--ui-capture")>=0));return;}if(args.Length==2&&args[0]=="--notice"){AudioActions.ShowNotice(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(args[1])));return;}bool first;using(var mutex=new Mutex(true,"Local\\PhoneDeck",out first)){if(first)Run(args);}}
  static void Run(string[] args){try{
   var root=AppDomain.CurrentDomain.BaseDirectory;
   if(Array.IndexOf(args,"--answer-check")>=0){File.WriteAllText(Path.Combine(root,"answer-status.local.txt"),PhoneDirectDial.Answer(true)?"Incoming answer button available; no action sent.":"No incoming answer button available; no action sent.");return;}
@@ -31,7 +31,7 @@ static class PhoneDeck {
    while(task.Status==Windows.Foundation.AsyncStatus.Started&&DateTime.UtcNow<limit)Thread.Sleep(40);
    if(task.Status!=Windows.Foundation.AsyncStatus.Completed||task.GetResults()!=LaunchQuerySupportStatus.Available)throw new Exception("Vincular ao Celular não disponível para chamadas.");
    string check="telefone-check-"+id+".txt";
-   File.WriteAllText(Path.Combine(root,check),"OK: Phone Link accepts "+uri+". No call placed. Version 1.5.0.10.");return;
+   File.WriteAllText(Path.Combine(root,check),"OK: Phone Link accepts "+uri+". No call placed. Version 1.6.0.12.");return;
   }
   PhoneDirectDial.Prepare();
   var options=new LauncherOptions{TargetApplicationPackageFamilyName=package};
@@ -42,6 +42,8 @@ static class PhoneDeck {
   PhoneDirectDial.Dial(number);
  }catch(Exception ex){AudioActions.Notice(ex.Message);Environment.ExitCode=1;}}
 }
+
+
 
 
 

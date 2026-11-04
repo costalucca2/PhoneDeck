@@ -79,3 +79,8 @@ O controle de estado real com ícone vermelho/verde depende de integração aute
 
 `PhoneDeck.exe --atender` procura um botão Atender/Aceitar/Answer visível e habilitado apenas em janelas do processo PhoneExperienceHost. Não usa atalho global e não inicia ligação de saída. `--answer-check` verifica a disponibilidade desse controle e grava answer-status.local.txt sem atender. Atender precisa de chamada recebida exibida no Phone Link; notificações exclusivas da Central de Ações do Windows não são acionadas nesta versão.
 
+
+## Janela própria
+
+Abra `PhoneDeck.exe` sem argumentos (ou com `--ui`) para usar a janela de contatos. Os botões Ligar, Atender e Desligar executam os mesmos comandos dos teclados. O indicador e o botão de microfone mostram o estado real do Windows, vermelho no mudo e verde ligado, atualizado a cada segundo. O painel não confirma sozinho uma chamada conectada. Contatos vêm de `telefones/*.txt` e nomes opcionais de `telefones-contatos.json`; ambos devem permanecer privados. Abrir a janela não faz chamadas nem altera o mudo.
+

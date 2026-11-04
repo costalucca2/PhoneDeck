@@ -6,3 +6,5 @@ discagem-*.txt
 *.exe
 *.lnk
 .env*
+
+telefones-contatos.json
