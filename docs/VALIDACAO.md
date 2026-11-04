@@ -79,3 +79,5 @@ A ponte Phone Link é minimizada após os comandos; pode ficar visível durante 
 - Registro nativo: pacote de diagnóstico assinado registrado, mas a ativação não completou. Controle Bluetooth independente de Phone Link ainda não implementado/validado.
 
 Capturas e URLs temporárias permanecem locais e fora do Git. Regra opcional de Firewall é específica para PhoneDeck.exe/TCP 40521/Private/LocalSubnet; não libera redes públicas.
+
+Na instalação local de verificação, a confirmação administrativa da regra de Firewall foi cancelada e a regra não foi criada. Acesso HTTP pelo próprio PC e leitura do QR passaram; acesso a partir de outro aparelho permanece pendente. Não anunciar o acesso pela LAN como validado.
