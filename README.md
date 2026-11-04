@@ -98,3 +98,9 @@ Verificação local sem chamadas:
 ```powershell
 powershell -STA -NoProfile -ExecutionPolicy Bypass -File tests\Test-Window.ps1
 ```
+
+## PhoneDeck como janela principal
+
+Os atalhos podem apontar diretamente para PhoneDeck.exe. Após ligar, atender ou desligar, o auxiliar minimiza as janelas visíveis do Phone Link e retorna ao PhoneDeck; o contato acionado pelo teclado é selecionado na janela. Abrir `--ui` novamente foca a janela existente.
+
+O Microsoft Phone Link continua obrigatório como ponte Bluetooth. Sua janela pode aparecer brevemente para acionar os controles; esta integração não substitui a telefonia do Windows. Atender/Desligar restauram a ponte antes de procurar seus botões e devolvem o foco depois. Consultas `--check`, `--inspect`, `--answer-check` e `--snapshot` não mudam o foco por esse mecanismo. Microfone do Discord continua separado.

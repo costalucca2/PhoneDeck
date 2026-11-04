@@ -54,3 +54,15 @@ Corrigida sobreposição da legenda nativa do Windows: remoção explícita de W
 Verificação em captura real do desktop, não apenas DrawToBitmap: sem barra branca e sem resíduos coloridos nos cantos. Repetido ciclo real de maximizar, minimizar, restaurar e redimensionar; a flag de legenda nativa permaneceu ausente. Reexecutados testes isolados da interface. Sem chamadas e sem alterações de áudio. Instalação e auxiliar Ulanzi conferidos por hash do mesmo artefato.
 
 Para futuras correções de desenho, conferir captura da tela real após alternar foco e tamanho; a captura interna anterior não reproduzia o defeito do compositor/nonclient.
+
+## 1.8.0.21 — apresentação e atalhos
+
+- GUI e testes de seleção do fluxo de apresentação passaram.
+- Retorno ao PhoneDeck/minimização da ponte exercitados com --presentation-test, sem chamadas.
+- Seis atalhos reais de contato da Ulanzi consultados com --check: suporte disponível, sem discagem.
+- Todos os atalhos da pasta apontam para PhoneDeck.exe. Últimos três comandos: Atender, Desligar, Microfone.
+- Atalho Som Windows substituído por Abrir PhoneDeck; abrir a GUI existente não criou outra janela.
+- Snapshot com a ponte minimizada ainda leu conexão e 16 registros reais.
+- Ligar/atender/desligar em chamada real não foram executados, conforme escolha do usuário.
+
+A ponte Phone Link é minimizada após os comandos; pode ficar visível durante o acionamento de sua interface. Não foi removida ou desinstalada.
