@@ -1,0 +1,73 @@
+﻿# PhoneDeck
+
+Controle de chamadas do Vincular ao Celular por botões físicos: Stream Deck, Ulanzi e teclados macro que executem programas.
+
+**Estado: experimental.** Compilação, detecção do discador e áudio podem ser verificados sem fazer chamadas. Ligação e encerramento reais ainda não foram validados nesta entrega. Não há plugin oficial próprio para Stream Deck: use a ação Abrir com atalhos Windows.
+
+## Conexões
+
+- iPhone e Android: chamadas do chip através de Bluetooth e Microsoft Phone Link configurado.
+- Wi-Fi/rede: não implementado para chamadas do chip. Recursos adicionais do Phone Link dependem do aparelho.
+- Não é telefonia VoIP e não substitui a linha do celular.
+
+## Requisitos
+
+Windows 10/11 x64, .NET Framework 4.x, Phone Link instalado e celular pareado. A interface precisa estar acessível na sessão Windows do usuário. Sem serviço remoto ou credenciais externas.
+
+## Compilar
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build.ps1
+```
+
+A saída fica em `out/PhoneDeck.exe`. O registro `out/build.json` inclui versão e hashes. O script usa o compilador .NET Framework do Windows, sem pacotes externos.
+
+## Contatos privados
+
+Ao lado do executável, crie `telefones/mesa.txt` com um único número, incluindo DDD e código de operadora quando necessários. Use IDs em letras minúsculas de 2 a 24 caracteres. Números e contatos ficam fora do Git.
+
+```text
+PhoneDeck.exe --contato mesa
+PhoneDeck.exe --desligar
+PhoneDeck.exe --microfone
+PhoneDeck.exe --microfone-on
+PhoneDeck.exe --microfone-off
+PhoneDeck.exe --audio-configure
+PhoneDeck.exe --audio-settings
+PhoneDeck.exe --audio-status
+PhoneDeck.exe --check --contato mesa
+PhoneDeck.exe --inspect --contato mesa
+```
+
+- `--check`: verifica suporte ao URI, sem chamada; não comprova Bluetooth ou discagem.
+- `--inspect`: lê o discador e compara o número; não disca.
+- `--audio-status`: grava estado do microfone em arquivo local, sem alterar.
+- `--microfone`: alterna mudo dos microfones padrão de mídia e comunicação. É mudo do Windows, não só desta chamada.
+- `--audio-configure`: usa para chamadas os dispositivos padrão de reprodução e captura usados no áudio normal; salva os IDs anteriores em arquivo local. Não altera ganho nem mudo.
+- `--audio-settings`: abre as configurações de som do Windows.
+- `--desligar`: procura botão visível de encerrar em janelas do Phone Link; não envia atalhos globais a outras plataformas.
+
+## Botões
+
+Crie atalhos `.lnk` para o executável com os argumentos acima. Use ação Abrir da Ulanzi, Sistema > Abrir do Stream Deck ou o software do teclado. O executável funciona sem console PowerShell. Não contém integração HID, plugin Stream Deck nem perfis de fabricantes publicados ainda.
+
+## Limites e segurança operacional
+
+O Phone Link não fornece uma API pública de telefonia para este fluxo; usamos UI Automation e clique nativo limitado à janela identificada. A Microsoft pode mudar controles. O clique movimenta o cursor brevemente e o restaura. Se o Windows recusar foco, se outro programa cobrir o alvo ou se o número mudar, a operação é bloqueada. Não há repetição automática de chamada. Uma solicitação enviada não comprova conexão.
+
+Não inspeciona nem configura plataformas financeiras. Não armazena contatos no repositório. O controle local não depende de IA em tempo de execução.
+
+## Comercial
+
+Licença MIT: uso comercial, modificação e redistribuição permitidos com manutenção do aviso de licença. Pode ser oferecido com serviço pago de instalação, configuração de teclados e suporte. PhoneDeck não é afiliado à Microsoft, Apple, Elgato ou Ulanzi.
+
+## Referências examinadas
+
+- [Heartran/phonelink-mcp-server](https://github.com/Heartran/phonelink-mcp-server): projeto público com comando de iniciar chamada; depende de UI e não oferece aqui o conjunto completo de áudio/encerramento. Código não incorporado.
+- [Microsoft: configurar chamadas](https://support.microsoft.com/en-us/windows/apps/phonelink/setting-up-calls-in-the-phone-link).
+- [Microsoft: UI Automation e escala](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-screenscaling).
+
+## Discord
+
+Use `--discord-microfone` para alternar o mudo exclusivo do Discord desktop. Abre/restaura sua janela e envia Ctrl+Shift+M somente após confirmar o processo em primeiro plano. Não altera o mudo global. O comando enviado não confirma o estado final do Discord.
+

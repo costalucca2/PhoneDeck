@@ -1,0 +1,8 @@
+out/
+telefones/
+*.local.*
+telefone-check-*.txt
+discagem-*.txt
+*.exe
+*.lnk
+.env*
