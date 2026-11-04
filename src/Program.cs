@@ -4,10 +4,10 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Threading;
 using Windows.System;
-[assembly:System.Reflection.AssemblyVersion("1.6.0.12")]
-[assembly:System.Reflection.AssemblyFileVersion("1.6.0.12")]
+[assembly:System.Reflection.AssemblyVersion("1.7.0.16")]
+[assembly:System.Reflection.AssemblyFileVersion("1.7.0.16")]
 static class PhoneDeck {
- [STAThread]static void Main(string[] args){PhoneDirectDial.Initialize();if(args.Length==0||Array.IndexOf(args,"--ui")>=0){Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);Application.Run(new PhoneDeckWindow(Array.IndexOf(args,"--ui-capture")>=0));return;}if(args.Length==2&&args[0]=="--notice"){AudioActions.ShowNotice(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(args[1])));return;}bool first;using(var mutex=new Mutex(true,"Local\\PhoneDeck",out first)){if(first)Run(args);}}
+ [STAThread]static void Main(string[] args){PhoneDirectDial.Initialize();if(Array.IndexOf(args,"--snapshot")>=0){try{PhoneSnapshot.Save();}catch{Environment.ExitCode=1;}return;}if(args.Length==0||Array.IndexOf(args,"--ui")>=0){Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);Application.Run(new PhoneDeckWindow(Array.IndexOf(args,"--ui-capture")>=0));return;}if(args.Length==2&&args[0]=="--notice"){AudioActions.ShowNotice(System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(args[1])));return;}bool first;using(var mutex=new Mutex(true,"Local\\PhoneDeck",out first)){if(first)Run(args);else Environment.ExitCode=2;}}
  static void Run(string[] args){try{
   var root=AppDomain.CurrentDomain.BaseDirectory;
   if(Array.IndexOf(args,"--answer-check")>=0){File.WriteAllText(Path.Combine(root,"answer-status.local.txt"),PhoneDirectDial.Answer(true)?"Incoming answer button available; no action sent.":"No incoming answer button available; no action sent.");return;}
@@ -18,10 +18,11 @@ static class PhoneDeck {
   int index=Array.IndexOf(args,"--contato");
   string id=index>=0&&index+1<args.Length?args[index+1]:null;
   if(index>=0&&(id==null||!Regex.IsMatch(id,@"^[a-z]{2,24}$")))throw new Exception("Contato inválido.");
-  if(id==null)throw new Exception("Use --contato ID, --microfone, --audio-configure ou --desligar.");
-  var file=Path.Combine("telefones",id+".txt");
-  var number=File.ReadAllText(Path.Combine(root,file)).Trim();
-  if(!Regex.IsMatch(number,@"^(?:\+[0-9]{10,15}|0[0-9]{12,13}|[0-9]{8,9})$"))throw new Exception("Número de telefone inválido.");
+  int ni=Array.IndexOf(args,"--number");
+  string direct=ni>=0&&ni+1<args.Length?args[ni+1]:null;
+  if(id==null&&direct==null)throw new Exception("Selecione um contato ou informe um número.");
+  var number=direct??File.ReadAllText(Path.Combine(root,Path.Combine("telefones",id+".txt"))).Trim();
+  if(!Regex.IsMatch(number,@"^(?:\+[1-9][0-9]{7,14}|[0-9]{8,14})$"))throw new Exception("Número de telefone inválido.");
   var uri=new Uri("tel:"+number);
   const string package="Microsoft.YourPhone_8wekyb3d8bbwe";
   if(Array.IndexOf(args,"--inspect")>=0){File.WriteAllText(Path.Combine(root,"discagem-inspecao.txt"),PhoneDirectDial.Inspect(number));return;}
@@ -31,7 +32,7 @@ static class PhoneDeck {
    while(task.Status==Windows.Foundation.AsyncStatus.Started&&DateTime.UtcNow<limit)Thread.Sleep(40);
    if(task.Status!=Windows.Foundation.AsyncStatus.Completed||task.GetResults()!=LaunchQuerySupportStatus.Available)throw new Exception("Vincular ao Celular não disponível para chamadas.");
    string check="telefone-check-"+id+".txt";
-   File.WriteAllText(Path.Combine(root,check),"OK: Phone Link accepts "+uri+". No call placed. Version 1.6.0.12.");return;
+   File.WriteAllText(Path.Combine(root,check),"OK: Phone Link accepts "+uri+". No call placed. Version 1.7.0.16.");return;
   }
   PhoneDirectDial.Prepare();
   var options=new LauncherOptions{TargetApplicationPackageFamilyName=package};
@@ -42,6 +43,10 @@ static class PhoneDeck {
   PhoneDirectDial.Dial(number);
  }catch(Exception ex){AudioActions.Notice(ex.Message);Environment.ExitCode=1;}}
 }
+
+
+
+
 
 
 

@@ -29,3 +29,20 @@ Oito verificações dos nomes de botões passaram, incluindo rejeição de Ligar
 
 Janela instalada aberta e conferida visualmente: seis contatos locais visíveis, Ligar/Atender/Desligar e controle de microfone. Verificação independente de acessibilidade confirmou os cinco controles/indicadores esperados e janela respondendo. O microfone real foi lido como silenciado e exibido em vermelho. Nenhuma chamada foi iniciada, atendida ou encerrada na verificação; o mudo foi preservado. Capturas e contatos permanecem fora do repositório.
 
+
+## 1.7.0.16 — interface e comparação com Phone Link
+
+| Recurso | Verificação |
+|---|---|
+| Barra escura, botões e layout | Captura da janela revisada; seis contatos e discador visíveis sem cortes |
+| Dispositivo e conexão | Leitura real do Phone Link, sem presumir conexão pelo processo |
+| Chamadas recentes | 16 registros reais lidos da área Chamadas; apenas cache local |
+| Busca por nome e telefone | Passou em fixture isolada |
+| Favoritos | Filtro e gravação/leitura da preferência passaram em fixture isolada |
+| Discador e apagar | Passou em fixture isolada; suporte ao URI consultado sem discar |
+| Microfone vermelho/verde | Dois estados visuais testados sem alterar hardware; estado real lido como silenciado |
+| Volume geral | Leitura real exibida; nenhum ajuste de volume efetuado no teste |
+| Ulanzi | Seis atalhos de contatos consultados sem chamadas; destinos/argumentos de Atender, Desligar e áudio conferidos |
+| Ligar, Atender e Desligar reais | Não executados: validação sem chamadas escolhida pelo usuário |
+
+A instalação da janela e do auxiliar da Ulanzi foi conferida por hash do mesmo artefato. Ícone sincronizado do Discord permanece separado e pendente da integração autorizada. Não foi alterado nenhum programa de trading. Capturas, histórico, contatos e números não foram publicados.

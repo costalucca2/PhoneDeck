@@ -84,3 +84,17 @@ O controle de estado real com ícone vermelho/verde depende de integração aute
 
 Abra `PhoneDeck.exe` sem argumentos (ou com `--ui`) para usar a janela de contatos. Os botões Ligar, Atender e Desligar executam os mesmos comandos dos teclados. O indicador e o botão de microfone mostram o estado real do Windows, vermelho no mudo e verde ligado, atualizado a cada segundo. O painel não confirma sozinho uma chamada conectada. Contatos vêm de `telefones/*.txt` e nomes opcionais de `telefones-contatos.json`; ambos devem permanecer privados. Abrir a janela não faz chamadas nem altera o mudo.
 
+
+## Interface de terminal
+
+Barra própria com arrastar, redimensionar, minimizar, maximizar e fechar. Contatos com pesquisa por nome/telefone, favoritos persistentes e cadastro local. Discador numérico com apagar. Microfone do Windows e volume geral lidos pelo Core Audio; o volume só muda por ação do usuário.
+
+O botão Atualizar lê aparelho, conexão e até 16 registros da área Chamadas do Phone Link, quando sua janela estiver acessível. O histórico é uma leitura datada, não um monitor de ligação ativa. Cache e favoritos são arquivos locais ignorados pelo Git. Não há SMS, leitura de bateria nem controle de tons DTMF nesta versão.
+
+`--snapshot` faz essa leitura sem chamadas. `--number NUMERO` disca um número validado usando a mesma proteção de alvo do comando de contatos; `--check --number NUMERO` apenas consulta suporte ao URI. A consulta não comprova que o aparelho disca.
+
+Verificação local sem chamadas:
+
+```powershell
+powershell -STA -NoProfile -ExecutionPolicy Bypass -File tests\Test-Window.ps1
+```
