@@ -46,3 +46,11 @@ Janela instalada aberta e conferida visualmente: seis contatos locais visíveis,
 | Ligar, Atender e Desligar reais | Não executados: validação sem chamadas escolhida pelo usuário |
 
 A instalação da janela e do auxiliar da Ulanzi foi conferida por hash do mesmo artefato. Ícone sincronizado do Discord permanece separado e pendente da integração autorizada. Não foi alterado nenhum programa de trading. Capturas, histórico, contatos e números não foram publicados.
+
+## 1.7.1.18 — pintura real da janela
+
+Corrigida sobreposição da legenda nativa do Windows: remoção explícita de WS_CAPTION, tratamento de WM_NCCALCSIZE/WM_NCPAINT/WM_NCACTIVATE. Botões limpam toda a superfície antes do desenho arredondado; painéis e filhos são invalidados após redimensionar.
+
+Verificação em captura real do desktop, não apenas DrawToBitmap: sem barra branca e sem resíduos coloridos nos cantos. Repetido ciclo real de maximizar, minimizar, restaurar e redimensionar; a flag de legenda nativa permaneceu ausente. Reexecutados testes isolados da interface. Sem chamadas e sem alterações de áudio. Instalação e auxiliar Ulanzi conferidos por hash do mesmo artefato.
+
+Para futuras correções de desenho, conferir captura da tela real após alternar foco e tamanho; a captura interna anterior não reproduzia o defeito do compositor/nonclient.
