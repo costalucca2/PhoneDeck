@@ -32,6 +32,22 @@ static class PhoneDirectDial {
   if(!SetCursorPos(target.x,target.y))throw new Exception("Não foi possível alcançar o botão da chamada.");
   try{GetWindowThreadProcessId(WindowFromPoint(target),out pid);if(pid!=(uint)window.Current.ProcessId)throw new Exception("A janela mudou. Clique cancelado.");if(validate!=null&&!validate())throw new Exception("O número mudou. Clique cancelado.");mouse_event(2,0,0,0,UIntPtr.Zero);mouse_event(4,0,0,0,UIntPtr.Zero);}finally{SetCursorPos(previous.x,previous.y);}
  }
+ public static bool IsAnswerLabel(string name){return Regex.IsMatch(name??"",@"^(Atender|Atender chamada|Atender a chamada|Aceitar|Aceitar chamada|Answer|Answer call|Accept|Accept call)(\s*\(.*\))?$",RegexOptions.IgnoreCase);}
+ public static bool Answer(bool inspectOnly){
+  foreach(var process in Process.GetProcessesByName("PhoneExperienceHost")){
+   var windows=AutomationElement.RootElement.FindAll(TreeScope.Children,new PropertyCondition(AutomationElement.ProcessIdProperty,process.Id));
+   foreach(AutomationElement w in windows){
+    var buttons=w.FindAll(TreeScope.Descendants,new PropertyCondition(AutomationElement.ControlTypeProperty,ControlType.Button));
+    foreach(AutomationElement b in buttons){
+     if(!b.Current.IsEnabled||b.Current.IsOffscreen||!IsAnswerLabel(b.Current.Name))continue;
+     if(!inspectOnly){Click(w,b,()=>b.Current.IsEnabled&&!b.Current.IsOffscreen&&IsAnswerLabel(b.Current.Name));Log("Incoming-call answer button activated once. Connection not verified.");}
+     return true;
+    }
+   }
+  }
+  if(!inspectOnly)throw new Exception("Nenhuma chamada recebida com botão Atender foi encontrada no Vincular ao Celular.");
+  return false;
+ }
  public static void Hangup(){
   foreach(var process in Process.GetProcessesByName("PhoneExperienceHost")){
    var windows=AutomationElement.RootElement.FindAll(TreeScope.Children,new PropertyCondition(AutomationElement.ProcessIdProperty,process.Id));

@@ -74,3 +74,8 @@ Use `--discord-microfone` para alternar o mudo exclusivo do Discord desktop. Abr
 
 O controle de estado real com ícone vermelho/verde depende de integração autenticada com o Discord. Os ícones estão em assets; o atalho básico não comprova nem sincroniza o estado. A integração ainda está pendente. Avisos de áudio não bloqueiam mais o próximo comando.
 
+
+## Atender ligações recebidas
+
+`PhoneDeck.exe --atender` procura um botão Atender/Aceitar/Answer visível e habilitado apenas em janelas do processo PhoneExperienceHost. Não usa atalho global e não inicia ligação de saída. `--answer-check` verifica a disponibilidade desse controle e grava answer-status.local.txt sem atender. Atender precisa de chamada recebida exibida no Phone Link; notificações exclusivas da Central de Ações do Windows não são acionadas nesta versão.
+

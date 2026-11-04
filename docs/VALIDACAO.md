@@ -19,3 +19,8 @@ Avisos de áudio passaram a executar fora do processo da ação. A ação de con
 
 Ícones vermelho/verde disponíveis em assets. Integração opcional de estado real via Discord Enhanced depende de aplicativo Discord com RPC e autorização; não está ativa nesta entrega. O pacote de terceiro não integra este repositório e mantém sua licença própria.
 
+
+## 1.5.0.10 — Atender
+
+Oito verificações dos nomes de botões passaram, incluindo rejeição de Ligar, Desligar e Recusar. A leitura das janelas reais não encontrou chamada recebida e não enviou ação. Atendimento real ainda não validado; o comando atua somente quando o Phone Link exibe botão de atendimento visível e habilitado.
+
