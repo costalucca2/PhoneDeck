@@ -8,3 +8,8 @@ discagem-*.txt
 .env*
 
 telefones-contatos.json
+*.pfx
+*.p12
+*.cer
+*.key
+*.pem

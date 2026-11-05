@@ -1,112 +1,67 @@
 ﻿# PhoneDeck
 
-Controle de chamadas do Vincular ao Celular por botões físicos: Stream Deck, Ulanzi e teclados macro que executem programas.
+**Prévia experimental 1.10.1.29 — áudio de chamadas no PC ainda não implementado.**
 
-**Estado: experimental.** Compilação, detecção do discador e áudio podem ser verificados sem fazer chamadas. Ligação e encerramento reais ainda não foram validados nesta entrega. Não há plugin oficial próprio para Stream Deck: use a ação Abrir com atalhos Windows.
+Janela de contatos e controle Bluetooth HFP direto, com os mesmos comandos em Ulanzi, Stream Deck ou teclado macro. O caminho de chamadas não abre nem automatiza o Vincular ao Celular. Android ainda não foi validado em aparelho real. [Instalação e atalhos](docs/INSTALACAO.md).
 
-## Conexões
+**Experimental: controle e áudio são camadas diferentes.** Os três comandos foram validados com telefone simulado no binário entregue. Não foi feita chamada real. O áudio de chamadas no microfone/caixa de som do PC ainda não está implementado/validado neste backend HFP direto; não vender ou apresentar esta versão como substituição completa de um viva-voz. A negociação RFCOMM não estabelece por si só o canal SCO de voz.
 
-- iPhone e Android: chamadas do chip através de Bluetooth e Microsoft Phone Link configurado.
-- Wi-Fi/rede: não implementado para chamadas do chip. Recursos adicionais do Phone Link dependem do aparelho.
-- Não é telefonia VoIP e não substitui a linha do celular.
+## Uso
 
-## Requisitos
+Windows 10/11 x64 com .NET Framework 4.x, Bluetooth Classic e celular pareado com serviço Hands-Free Audio Gateway. Abra o PhoneDeck com o telefone ocioso e use Atualizar para conectar o controle. Um processo local sem console mantém a sessão HFP aberta entre os botões. Fechar a janela não encerra esse processo nem a chamada.
 
-Windows 10/11 x64, .NET Framework 4.x, Phone Link instalado e celular pareado. A interface precisa estar acessível na sessão Windows do usuário. Sem serviço remoto ou credenciais externas.
+Se já houver chamada ativa/recebida e a sessão própria ainda não estiver conectada, PhoneDeck recusa reiniciar o HFP para não interferir. A conexão direta também pode disputar o perfil com outro aplicativo de chamadas; a instalação não desconecta programas ou chamadas existentes. Pareamento prévio não garante disponibilidade do canal. Havendo mais de um gateway HFP pareado, o programa recusa escolher um arbitrariamente.
 
-## Compilar
+```text
+PhoneDeck.exe --ui
+PhoneDeck.exe --contato mesa
+PhoneDeck.exe --number NUMERO
+PhoneDeck.exe --atender
+PhoneDeck.exe --desligar
+PhoneDeck.exe --snapshot
+PhoneDeck.exe --check --contato mesa
+PhoneDeck.exe --inspect --contato mesa
+PhoneDeck.exe --answer-check
+PhoneDeck.exe --native-stop
+```
+
+Ligar envia ATD uma vez após confirmar telefone ocioso. Atender exige chamada recebida sem outra chamada ativa/retida. Desligar exige exatamente uma chamada identificada por CLCC. Não há repetição automática nem fallback para janela/URI do Windows. Confirmação do comando pelo telefone não comprova conversa conectada.
+
+As consultas snapshot/check/inspect/answer-check não enviam comandos de discagem, atendimento ou encerramento. Elas podem iniciar a conexão de controle quando o telefone estiver ocioso. Atualizar não lê mais a interface nem o histórico do Phone Link; o histórico do celular está indisponível no modo direto.
+
+## Botões e contatos
+
+Use ação Abrir com atalhos Windows para o executável e argumentos acima. Não há plugin oficial próprio de Stream Deck. Os atalhos existentes da Ulanzi continuam válidos após atualizar o executável: contatos para ligar, penúltimo botão Atender e último Desligar. Layout, relógio, ícones, pastas e dados privados são preservados pelo instalador.
+
+Ao lado do executável, mantenha telefones/<id>.txt com um número incluindo DDD/código de operadora quando necessário. IDs: letras minúsculas de 2 a 24 caracteres. Nomes opcionais ficam em telefones-contatos.json. Esses dados, favoritos, capturas e logs ficam fora do Git.
+
+## Áudio e Discord
+
+--microfone alterna o mudo dos microfones padrão do Windows; --microfone-on e --microfone-off definem o estado. A interface mostra vermelho no mudo e verde ligado. Isso não comprova que a voz esteja roteada ao telefone. --audio-configure configura dispositivos padrão de comunicação e salva os IDs anteriores; só executar quando solicitado. Volume geral usa Core Audio.
+
+--discord-microfone continua separado: restaura o Discord e envia Ctrl+Shift+M após verificar seu processo. O envio desse atalho não confirma o estado final do Discord.
+
+## Compilar, testar e instalar
+
+Siga a política de versões indicada em AGENTS.md antes de compilar.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build.ps1
+powershell -STA -NoProfile -ExecutionPolicy Bypass -File scripts\verify.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install.ps1
 ```
 
-A saída fica em `out/PhoneDeck.exe`. O registro `out/build.json` inclui versão e hashes. O script usa o compilador .NET Framework do Windows, sem pacotes externos.
+build.json registra o hash do artefato e de todas as fontes. Test-HfpProtocol usa as classes do executável construído com um transporte simulado, sem acessar Bluetooth. Test-Window verifica a janela com contatos fictícios. verify.ps1 gera o registro necessário para instalar. A instalação padrão fica em %LOCALAPPDATA%/PhoneDeck; -Runtime permite atualizar outro diretório. A CI valida e publica uma prévia experimental. Para instalar, scripts/install.ps1 exige o registro de testes do artefato exato, serializa a instalação e preserva somente o backup imediatamente anterior depois de verificar os dois aliases. Configurações e contatos não são substituídos.
 
-## Contatos privados
+## Limites
 
-Ao lado do executável, crie `telefones/mesa.txt` com um único número, incluindo DDD e código de operadora quando necessários. Use IDs em letras minúsculas de 2 a 24 caracteres. Números e contatos ficam fora do Git.
+Não há chamadas do chip por Wi-Fi, VoIP, SMS, importação nativa do histórico, bateria, DTMF ou áudio SCO próprio. As APIs públicas de controle completo PhoneCall/CallsPhoneContract 6 não estão presentes no Windows 10 testado. O diagnóstico separado NativeBridge 0.1.0.37 comprovou permissão, registro e conexão do transporte Windows; esse resultado não valida áudio nem os comandos do backend direto instalado.
 
-```text
-PhoneDeck.exe --contato mesa
-PhoneDeck.exe --desligar
-PhoneDeck.exe --microfone
-PhoneDeck.exe --microfone-on
-PhoneDeck.exe --microfone-off
-PhoneDeck.exe --audio-configure
-PhoneDeck.exe --audio-settings
-PhoneDeck.exe --audio-status
-PhoneDeck.exe --check --contato mesa
-PhoneDeck.exe --inspect --contato mesa
-```
+O assistente QR abre somente um guia local temporário de pareamento, sem domínio nem app no celular; não constitui um protocolo de pareamento por QR. Não recebe contatos ou comandos de chamada.
 
-- `--check`: verifica suporte ao URI, sem chamada; não comprova Bluetooth ou discagem.
-- `--inspect`: lê o discador e compara o número; não disca.
-- `--audio-status`: grava estado do microfone em arquivo local, sem alterar.
-- `--microfone`: alterna mudo dos microfones padrão de mídia e comunicação. É mudo do Windows, não só desta chamada.
-- `--audio-configure`: usa para chamadas os dispositivos padrão de reprodução e captura usados no áudio normal; salva os IDs anteriores em arquivo local. Não altera ganho nem mudo.
-- `--audio-settings`: abre as configurações de som do Windows.
-- `--desligar`: procura botão visível de encerrar em janelas do Phone Link; não envia atalhos globais a outras plataformas.
+O programa não inspeciona nem configura plataformas financeiras, não opera ordens e não depende de IA em runtime. O canal de comandos entre processos fica limitado ao usuário Windows atual. Chamadas não são repetidas após timeout.
 
-## Botões
+## Licença
 
-Crie atalhos `.lnk` para o executável com os argumentos acima. Use ação Abrir da Ulanzi, Sistema > Abrir do Stream Deck ou o software do teclado. O executável funciona sem console PowerShell. Não contém integração HID, plugin Stream Deck nem perfis de fabricantes publicados ainda.
-
-## Limites e segurança operacional
-
-O Phone Link não fornece uma API pública de telefonia para este fluxo; usamos UI Automation e clique nativo limitado à janela identificada. A Microsoft pode mudar controles. O clique movimenta o cursor brevemente e o restaura. Se o Windows recusar foco, se outro programa cobrir o alvo ou se o número mudar, a operação é bloqueada. Não há repetição automática de chamada. Uma solicitação enviada não comprova conexão.
-
-Não inspeciona nem configura plataformas financeiras. Não armazena contatos no repositório. O controle local não depende de IA em tempo de execução.
-
-## Comercial
-
-Licença MIT: uso comercial, modificação e redistribuição permitidos com manutenção do aviso de licença. Pode ser oferecido com serviço pago de instalação, configuração de teclados e suporte. PhoneDeck não é afiliado à Microsoft, Apple, Elgato ou Ulanzi.
-
-## Referências examinadas
-
-- [Heartran/phonelink-mcp-server](https://github.com/Heartran/phonelink-mcp-server): projeto público com comando de iniciar chamada; depende de UI e não oferece aqui o conjunto completo de áudio/encerramento. Código não incorporado.
-- [Microsoft: configurar chamadas](https://support.microsoft.com/en-us/windows/apps/phonelink/setting-up-calls-in-the-phone-link).
-- [Microsoft: UI Automation e escala](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-screenscaling).
-
-## Discord
-
-Use `--discord-microfone` para alternar o mudo exclusivo do Discord desktop. Abre/restaura sua janela e envia Ctrl+Shift+M somente após confirmar o processo em primeiro plano. Não altera o mudo global. O comando enviado não confirma o estado final do Discord.
-
-
-O controle de estado real com ícone vermelho/verde depende de integração autenticada com o Discord. Os ícones estão em assets; o atalho básico não comprova nem sincroniza o estado. A integração ainda está pendente. Avisos de áudio não bloqueiam mais o próximo comando.
-
-
-## Atender ligações recebidas
-
-`PhoneDeck.exe --atender` procura um botão Atender/Aceitar/Answer visível e habilitado apenas em janelas do processo PhoneExperienceHost. Não usa atalho global e não inicia ligação de saída. `--answer-check` verifica a disponibilidade desse controle e grava answer-status.local.txt sem atender. Atender precisa de chamada recebida exibida no Phone Link; notificações exclusivas da Central de Ações do Windows não são acionadas nesta versão.
-
-
-## Janela própria
-
-Abra `PhoneDeck.exe` sem argumentos (ou com `--ui`) para usar a janela de contatos. Os botões Ligar, Atender e Desligar executam os mesmos comandos dos teclados. O indicador e o botão de microfone mostram o estado real do Windows, vermelho no mudo e verde ligado, atualizado a cada segundo. O painel não confirma sozinho uma chamada conectada. Contatos vêm de `telefones/*.txt` e nomes opcionais de `telefones-contatos.json`; ambos devem permanecer privados. Abrir a janela não faz chamadas nem altera o mudo.
-
-
-## Interface de terminal
-
-Barra própria com arrastar, redimensionar, minimizar, maximizar e fechar. Contatos com pesquisa por nome/telefone, favoritos persistentes e cadastro local. Discador numérico com apagar. Microfone do Windows e volume geral lidos pelo Core Audio; o volume só muda por ação do usuário.
-
-O botão Atualizar lê aparelho, conexão e até 16 registros da área Chamadas do Phone Link, quando sua janela estiver acessível. O histórico é uma leitura datada, não um monitor de ligação ativa. Cache e favoritos são arquivos locais ignorados pelo Git. Não há SMS, leitura de bateria nem controle de tons DTMF nesta versão.
-
-`--snapshot` faz essa leitura sem chamadas. `--number NUMERO` disca um número validado usando a mesma proteção de alvo do comando de contatos; `--check --number NUMERO` apenas consulta suporte ao URI. A consulta não comprova que o aparelho disca.
-
-Verificação local sem chamadas:
-
-```powershell
-powershell -STA -NoProfile -ExecutionPolicy Bypass -File tests\Test-Window.ps1
-```
-
-## PhoneDeck como janela principal
-
-Os atalhos podem apontar diretamente para PhoneDeck.exe. Após ligar, atender ou desligar, o auxiliar minimiza as janelas visíveis do Phone Link e retorna ao PhoneDeck; o contato acionado pelo teclado é selecionado na janela. Abrir `--ui` novamente foca a janela existente.
-
-O Microsoft Phone Link continua obrigatório como ponte Bluetooth. Sua janela pode aparecer brevemente para acionar os controles; esta integração não substitui a telefonia do Windows. Atender/Desligar restauram a ponte antes de procurar seus botões e devolvem o foco depois. Consultas `--check`, `--inspect`, `--answer-check` e `--snapshot` não mudam o foco por esse mecanismo. Microfone do Discord continua separado.
-
-## QR local para quem baixar o repositório
-
-Use **Conectar celular · QR** ou `PhoneDeck.exe --setup`. O celular abre um guia temporário pela rede local, sem domínio ou app no celular. Pareamento e permissões continuam sendo confirmados nos aparelhos. [Guia completo](docs/CONECTAR-CELULAR.md).
-
-A biblioteca QRCoder 1.8.1 (MIT) é baixada com hash fixo no build e embutida no executável. A geração do QR e a página funcionam localmente, sem servidor externo.
+MIT: uso comercial e redistribuição permitidos com o aviso de licença. PhoneDeck não é afiliado à Microsoft, Apple, Elgato ou Ulanzi. QRCoder 1.8.1 (MIT), baixado com hash fixo, é embutido para o guia local. Não comercializar funções de voz ainda não entregues como disponíveis.
+Use --native-stop para liberar o servidor próprio enquanto o telefone estiver ocioso. O comando não encerra chamadas, recusa parar durante uma chamada e não inicia um servidor ausente.
