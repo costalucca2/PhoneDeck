@@ -21,12 +21,12 @@ using PhoneDeckNative;
 
 // One persistent, user-local HFP session. Never launches Phone Link or retries a call.
 static class NativeHfpBridge {
- static string PipeName {get{return "PhoneDeck.Hfp."+WindowsIdentity.GetCurrent().User.Value;}}
+ static string PipeName {get{return "PhoneDeck.SystemHfp.v2."+WindowsIdentity.GetCurrent().User.Value;}}
  public static Dictionary<string,object> Request(string action,string number=null){
   using(var pipe=new NamedPipeClientStream(".",PipeName,PipeDirection.InOut,PipeOptions.Asynchronous)){
    try{pipe.Connect(150);}catch(TimeoutException){
     if(action=="stop")return new Dictionary<string,object>{{"Ok",true},{"Message","Serviço já encerrado."}};
-    Process.Start(new ProcessStartInfo(System.Windows.Forms.Application.ExecutablePath,"--native-server"){UseShellExecute=false,CreateNoWindow=true,WindowStyle=ProcessWindowStyle.Hidden});
+    NativePackageActivation.Start();
     pipe.Connect(5000);
    }
    var work=Task.Run(()=>{
@@ -43,7 +43,7 @@ static class NativeHfpBridge {
  public static void Serve(){
   bool first;using(var owner=new Mutex(true,"Local\\"+PipeName,out first)){
    if(!first)return;
-   using(var session=new NativeHfpSession())while(true){
+   using(var session=new SystemHfpSession())while(true){
     var security=new PipeSecurity();security.SetAccessRuleProtection(true,false);
     security.AddAccessRule(new PipeAccessRule(WindowsIdentity.GetCurrent().User,PipeAccessRights.FullControl,AccessControlType.Allow));
     using(var pipe=new NamedPipeServerStream(PipeName,PipeDirection.InOut,1,PipeTransmissionMode.Byte,PipeOptions.Asynchronous,4096,4096,security)){
@@ -63,6 +63,33 @@ static class NativeHfpBridge {
    }
   }
  }
+}
+
+static class NativePackageActivation {
+ [System.Runtime.InteropServices.ComImport,System.Runtime.InteropServices.Guid("45BA127D-10A8-46EA-8AB7-56EA9078943C")]class Manager {}
+ [System.Runtime.InteropServices.ComImport,System.Runtime.InteropServices.Guid("2e941141-7f97-4756-ba1d-9decde894a3d"),System.Runtime.InteropServices.InterfaceType(System.Runtime.InteropServices.ComInterfaceType.InterfaceIsIUnknown)]interface IManager {
+  [System.Runtime.InteropServices.PreserveSig]int ActivateApplication([System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)]string id,[System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPWStr)]string args,uint options,out uint pid);
+  void ActivateForFile();void ActivateForProtocol();
+ }
+ public static void Start(){var manager=(IManager)new Manager();try{uint pid;System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(manager.ActivateApplication("PhoneDeck.NativeBridge_5rzpsgts89xb2!NativeProbe","--native-server",0,out pid));}finally{System.Runtime.InteropServices.Marshal.ReleaseComObject(manager);}}
+}
+
+sealed class SystemHfpSession:IDisposable {
+ readonly SystemHfp phone=new SystemHfp();
+ public Dictionary<string,object> Handle(string action,string number,DateTime deadline){
+  if(action=="stop"){
+   if(DateTime.UtcNow>=deadline)throw new TimeoutException("Solicitação expirada.");
+   if(PhoneCallManager.IsCallActive||PhoneCallManager.IsCallIncoming)throw new InvalidOperationException("Chamada ativa; serviço preservado.");
+   // A stop must not establish a Bluetooth connection merely to stop it.
+   if(phone.IsConnected&&phone.CallCount()!=0)throw new InvalidOperationException("Chamada detectada; serviço preservado.");
+   return new Dictionary<string,object>{{"Ok",true},{"StopServer",true},{"Message","Serviço encerrado."}};
+  }
+  var result=new SystemHfpDispatch(phone).Execute(action,number,deadline);
+  result["AudioPrepared"]=phone.AudioPrepared;
+  if(action=="status"&&phone.AudioPrepared)result["Message"]="Controle nativo e rota de voz preparados; conversa ainda não validada.";
+  return result;
+ }
+ public void Dispose(){phone.Dispose();}
 }
 
 sealed class NativeHfpSession:IDisposable {

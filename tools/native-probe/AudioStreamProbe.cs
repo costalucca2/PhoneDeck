@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 using Windows.ApplicationModel.Calls;
 #if !NATIVE_AUDIO_PACKAGE
-[assembly:System.Reflection.AssemblyFileVersion("0.1.0.5")]
+[assembly:System.Reflection.AssemblyFileVersion("0.1.0.6")]
 #endif
-// Opens PCM pins and verifies state transitions without transferring samples or calls.
+// PCM state probe; optional explicit silence queue, never captures microphone or sends calls.
 static class AudioStreamProbe {
  [StructLayout(LayoutKind.Sequential)]struct Interface {public int Size;public Guid Class;public uint Flags;public UIntPtr Reserved;}
  [DllImport("setupapi.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern IntPtr SetupDiGetClassDevs(ref Guid cls,string enumerator,IntPtr parent,uint flags);
@@ -19,6 +19,18 @@ static class AudioStreamProbe {
  [DllImport("kernel32.dll",SetLastError=true)]static extern bool DeviceIoControl(SafeFileHandle file,uint code,IntPtr input,int inputSize,IntPtr output,int outputSize,out uint returned,IntPtr overlapped);
  [DllImport("kernel32.dll",SetLastError=true)]static extern bool GetOverlappedResult(SafeFileHandle file,IntPtr overlapped,out uint returned,bool wait);
  [DllImport("kernel32.dll",SetLastError=true)]static extern bool CancelIoEx(SafeFileHandle file,IntPtr overlapped);
+ sealed class SilenceFrame:IDisposable {
+  readonly SafeFileHandle pin;readonly System.Threading.ManualResetEvent signal=new System.Threading.ManualResetEvent(false);
+  IntPtr data,header,overlap;bool pending;
+  public SilenceFrame(SafeFileHandle pin){this.pin=pin;try{
+   data=Marshal.AllocHGlobal(320);Marshal.Copy(new byte[320],0,data,320);
+   byte[] bytes=new byte[56];BitConverter.GetBytes(56U).CopyTo(bytes,0);BitConverter.GetBytes(320U).CopyTo(bytes,32);BitConverter.GetBytes(320U).CopyTo(bytes,36);BitConverter.GetBytes(data.ToInt64()).CopyTo(bytes,40);
+   header=Marshal.AllocHGlobal(56);Marshal.Copy(bytes,0,header,56);
+   overlap=Marshal.AllocHGlobal(Marshal.SizeOf(typeof(System.Threading.NativeOverlapped)));Marshal.StructureToPtr(new System.Threading.NativeOverlapped{EventHandle=signal.SafeWaitHandle.DangerousGetHandle()},overlap,false);
+   uint returned;if(!DeviceIoControl(pin,0x002F8013,IntPtr.Zero,0,header,56,out returned,overlap)){int error=Marshal.GetLastWin32Error();if(error!=997)throw new System.ComponentModel.Win32Exception(error);pending=true;}
+  }catch{Dispose();throw;}}
+  public void Dispose(){if(pending){CancelIoEx(pin,overlap);uint returned;GetOverlappedResult(pin,overlap,out returned,true);pending=false;}if(overlap!=IntPtr.Zero){Marshal.FreeHGlobal(overlap);overlap=IntPtr.Zero;}if(header!=IntPtr.Zero){Marshal.FreeHGlobal(header);header=IntPtr.Zero;}if(data!=IntPtr.Zero){Marshal.FreeHGlobal(data);data=IntPtr.Zero;}signal.Dispose();}
+ }
  static void State(SafeFileHandle pin,uint state){
   byte[] property=new byte[24];new Guid("1d58c920-ac9b-11cf-a5d6-28db04c10000").ToByteArray().CopyTo(property,0);BitConverter.GetBytes(2U).CopyTo(property,20);
   IntPtr request=Marshal.AllocHGlobal(24),value=Marshal.AllocHGlobal(4),overlap=Marshal.AllocHGlobal(Marshal.SizeOf(typeof(System.Threading.NativeOverlapped)));
@@ -38,8 +50,9 @@ static class AudioStreamProbe {
   new Guid("05589f81-c356-11ce-bf01-00aa0055595a").ToByteArray().CopyTo(data,120);
   Short(data,136,1);Short(data,138,1);UInt(data,140,8000);UInt(data,144,16000);Short(data,148,2);Short(data,150,16);return data;
  }
- static int Main(){return Probe();}
- public static int Probe(){var log=new List<string>();Guid cls=new Guid("6994ad04-93ef-11d0-a3cc-00a0c9223196");IntPtr list=IntPtr.Zero;try{
+ static int Main(string[] args){return Probe(Array.IndexOf(args,"--queue-silence")>=0);}
+ public static int Probe(){return Probe(false);}
+ public static int Probe(bool queueSilence){var log=new List<string>();Guid cls=new Guid("6994ad04-93ef-11d0-a3cc-00a0c9223196");IntPtr list=IntPtr.Zero;try{
   if(PhoneCallManager.IsCallActive||PhoneCallManager.IsCallIncoming){log.Add("Aborted=CallActiveOrIncoming;NoAudioHandleOpened");return 2;}
   list=SetupDiGetClassDevs(ref cls,null,IntPtr.Zero,18);if(list==new IntPtr(-1))throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());int found=0;
   for(uint i=0;;i++){var data=new Interface{Size=Marshal.SizeOf(typeof(Interface))};if(!SetupDiEnumDeviceInterfaces(list,IntPtr.Zero,ref cls,i,ref data)){if(Marshal.GetLastWin32Error()==259)break;throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());}
@@ -48,13 +61,14 @@ static class AudioStreamProbe {
     if(PhoneCallManager.IsCallActive||PhoneCallManager.IsCallIncoming)throw new Exception("Call detected; audio probe stopped");
     using(var filter=CreateFile(path,0xC0000000,3,IntPtr.Zero,3,0x40000000,IntPtr.Zero)){
      if(filter.IsInvalid){log.Add("FilterOpenError="+Marshal.GetLastWin32Error());continue;}
-     int running=0;var opened=new List<Tuple<uint,SafeFileHandle>>();
+     int running=0;var opened=new List<Tuple<uint,SafeFileHandle>>();SilenceFrame silence=null;
      try{
       foreach(uint index in new uint[]{0,3}){byte[] bytes=Format(index);IntPtr format=Marshal.AllocHGlobal(bytes.Length);try{Marshal.Copy(bytes,0,format,bytes.Length);SafeFileHandle pin;uint error=KsCreatePin(filter,format,0xC0000000,out pin);log.Add("PcmPin="+index+";OpenResult="+error);if(error!=0){if(pin!=null)pin.Dispose();throw new System.ComponentModel.Win32Exception((int)error);}opened.Add(Tuple.Create(index,pin));foreach(uint state in new uint[]{1,2}){if(PhoneCallManager.IsCallActive||PhoneCallManager.IsCallIncoming)throw new Exception("Call detected: audio test aborted");State(pin,state);log.Add("Pin="+index+";State="+state+";Result=OK");}}finally{Marshal.FreeHGlobal(format);}}
+      if(queueSilence){if(PhoneCallManager.IsCallActive||PhoneCallManager.IsCallIncoming)throw new Exception("Call detected before silence queue");silence=new SilenceFrame(opened[0].Item2);log.Add("OutgoingSilenceQueued=True;PcmBytes=320;NoMicrophoneCapture=True");}
       foreach(var pair in opened){try{if(PhoneCallManager.IsCallActive||PhoneCallManager.IsCallIncoming)throw new Exception("Call detected: audio test aborted");State(pair.Item2,3);running++;log.Add("Pin="+pair.Item1+";State=3;Result=OK");}catch(Exception ex){log.Add("Pin="+pair.Item1+";DuplexStateError="+ex.Message);}}
-     }finally{foreach(var pair in opened){try{State(pair.Item2,0);}catch{}pair.Item2.Dispose();}log.Add("AllPcmPinsClosed=True");}log.Add("VoiceRunReady="+(running==2));if(running!=2)return 3;
+     }finally{foreach(var pair in opened){try{State(pair.Item2,0);}catch{}}if(silence!=null)silence.Dispose();foreach(var pair in opened)pair.Item2.Dispose();log.Add("AllPcmPinsClosed=True");}log.Add("VoiceRunReady="+(running==2));if(running!=2)return 3;
     }
    }finally{Marshal.FreeHGlobal(detail);}
-  }log.Add("HfpAudioInterfaces="+found+";StateProbe=True;NoSamples=True;NoCallCommands=True");return found==1?0:4;
+  }log.Add("HfpAudioInterfaces="+found+";StateProbe=True;NoMicrophoneCapture=True;SilenceQueued="+queueSilence+";NoCallCommands=True");return found==1?0:4;
  }catch(Exception ex){log.Add("Error="+ex.Message);return 1;}finally{if(list!=IntPtr.Zero&&list!=new IntPtr(-1))SetupDiDestroyDeviceInfoList(list);File.WriteAllLines(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"audio-stream-probe.local.txt"),log);}}
 }

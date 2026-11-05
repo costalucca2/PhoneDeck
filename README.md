@@ -1,10 +1,10 @@
-﻿# PhoneDeck
+# PhoneDeck
 
-**Prévia experimental 1.10.1.29 — áudio de chamadas no PC ainda não implementado.**
+**Prévia experimental 1.11.0.32 — backend nativo de voz integrado; conversa real ainda não validada.**
 
 Janela de contatos e controle Bluetooth HFP direto, com os mesmos comandos em Ulanzi, Stream Deck ou teclado macro. O caminho de chamadas não abre nem automatiza o Vincular ao Celular. Android ainda não foi validado em aparelho real. [Instalação e atalhos](docs/INSTALACAO.md).
 
-**Experimental: controle e áudio são camadas diferentes.** Os três comandos foram validados com telefone simulado no binário entregue. Não foi feita chamada real. O áudio de chamadas no microfone/caixa de som do PC ainda não está implementado/validado neste backend HFP direto; não vender ou apresentar esta versão como substituição completa de um viva-voz. A negociação RFCOMM não estabelece por si só o canal SCO de voz.
+**Experimental: controle e áudio são camadas diferentes.** Os três comandos foram validados com telefone simulado no binário entregue. Não foi feita chamada real. O backend usa o serviço HFP nativo com identidade própria MSIX. A conexão e a preparação da rota de voz foram aceitas em Windows 10 22H2, sem Phone Link e com zero chamadas. Isso ainda não comprova voz de ponta a ponta. A interface interna pode variar entre versões do Windows.
 
 ## Uso
 
@@ -22,10 +22,11 @@ PhoneDeck.exe --snapshot
 PhoneDeck.exe --check --contato mesa
 PhoneDeck.exe --inspect --contato mesa
 PhoneDeck.exe --answer-check
+PhoneDeck.exe --native-audio-setup
 PhoneDeck.exe --native-stop
 ```
 
-Ligar envia ATD uma vez após confirmar telefone ocioso. Atender exige chamada recebida sem outra chamada ativa/retida. Desligar exige exatamente uma chamada identificada por CLCC. Não há repetição automática nem fallback para janela/URI do Windows. Confirmação do comando pelo telefone não comprova conversa conectada.
+Ligar, Atender e Desligar usam a interface HFP nativa uma vez por solicitação. Ligar exige telefone ocioso; Atender exige uma única chamada recebida; Desligar exige uma única chamada. Ligar/Atender também solicitam a rota de áudio local; uma falha posterior de áudio informa que a chamada já foi comandada e não repete a discagem. Não há repetição automática nem fallback para janela/URI do Windows. Confirmação do comando pelo telefone não comprova conversa conectada.
 
 As consultas snapshot/check/inspect/answer-check não enviam comandos de discagem, atendimento ou encerramento. Elas podem iniciar a conexão de controle quando o telefone estiver ocioso. Atualizar não lê mais a interface nem o histórico do Phone Link; o histórico do celular está indisponível no modo direto.
 
