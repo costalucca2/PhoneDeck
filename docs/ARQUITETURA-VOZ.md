@@ -32,3 +32,12 @@ Fontes primárias:
 ## Situação de entrega
 
 PhoneDeck 1.10.0.28 permanece sem áudio de chamadas implementado. Diagnósticos de acesso/conexão não equivalem a fluxo de voz. Não foi instalado aplicativo no iPhone, criado WebRTC que simule telefonia celular, aberto o aplicativo Windows ou executada chamada. A integração completa permanece pendente; este documento é resultado de investigação, não comprovação de funcionamento.
+## Atualização: backend nativo com identidade própria
+
+A versão 1.11.0.31 substitui o socket RFCOMM separado por SystemHfp/SystemHfpDispatch. O pacote PhoneDeck.NativeBridge tem a mesma assembly testada da janela e executa o servidor em MTA, sem interface da Microsoft. HfpTransportDevice é ativado via IActivationFactory.ActivateInstance e consulta da interface statics, não por solicitação direta da factory statics.
+
+IIDs e slots foram conferidos nos metadados COM e símbolos públicos da versão instalada de BTAGService.dll. SetAudioTransferAsync(true) chama ConnectAudioAsync; false chama DisconnectAudioAsync. Não copiar DLLs, símbolos ou código do sistema para a distribuição. A API é interna, portanto falha fechada se indisponível.
+
+Evidência local: acesso Allowed, registro próprio, ConnectAsync true, lista de chamadas vazia e preparação de áudio com resultado 0. Entrada ME6S e saída Realtek são os dispositivos padrão de mídia e comunicação, microfone ligado. Não foram feitas chamadas nem captura de microfone. Isso prova preparação aceita, não áudio de conversa. O teste de pinos KS continua sem RUN durante repouso e não é usado como backend.
+
+O broker usa novo pipe por usuário e ativa somente a identidade PhoneDeck. Comandos de chamada usam métodos nativos, guardas e prazo por solicitação; não repetem comandos após falha de áudio. Test-SystemHfp valida o mesmo dispatcher do binário com transporte simulado. Os resultados anteriores deste documento descrevem etapas históricas, não o backend atual.

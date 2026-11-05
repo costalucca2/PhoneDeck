@@ -10,3 +10,8 @@
 - 1.10.1.29 (05/11/2026): prévia experimental. Instalação limpa e atualização reproduzíveis, preservação de contatos e backup imediato, reinstalação idempotente, comando --native-stop protegido, erro Bluetooth com HRESULT e CI Windows sem acesso ao telefone. Testes locais de interface, protocolo no artefato exato, guia QR, compilação de diagnósticos e instalação passaram. Áudio SCO não implementado; nenhuma chamada real de teste. Publicação na main deve manter essa limitação explícita.
 
 Na 1.10.1.29, o prazo de cada solicitação também é validado antes das instruções AT, impedindo que uma conexão atrasada envie comandos após expirar. Testes com telefone simulado confirmaram bloqueio de discar/atender/desligar e de leitura após o prazo, inclusive expiração entre instruções.
+
+- 1.11.0.30: candidato testado; backend nativo instalado no componente 0.2.0.44. Substituído pelo candidato seguinte antes da promoção desktop.
+- 1.11.0.31: instalado em ambos os aliases com hash conferido; anterior desktop 1.10.0.28 preservado. Componente nativo 0.2.0.45 contém o mesmo executável e preserva 0.2.0.44. Controle e preparação de voz usam serviço HFP nativo, sem Phone Link. Acesso Allowed, conexão e rota local aceitos com zero chamadas. Dispositivos de comunicação conferidos; nenhuma mudança de volume/mudo. Testes simulados de ações, bloqueios, prazos e falha parcial de áudio passaram. Conversa real não validada.
+
+- 1.11.0.32: instalado com pacote nativo 0.2.0.46; backups imediatos 1.11.0.31 e 0.2.0.45. Confere ConnectionStatus físico antes de reutilizar o objeto HFP; desconexão invalida preparação anterior. Artefato exato passou nas verificações; rota de voz aceita novamente, zero chamadas, nenhum processo Phone Link. Não há validação de conversa.

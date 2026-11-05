@@ -3,12 +3,12 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Threading;
-[assembly:System.Reflection.AssemblyVersion("1.10.1.29")]
-[assembly:System.Reflection.AssemblyFileVersion("1.10.1.29")]
+[assembly:System.Reflection.AssemblyVersion("1.11.0.32")]
+[assembly:System.Reflection.AssemblyFileVersion("1.11.0.32")]
 static class PhoneDeck {
  [STAThread]static void Main(string[] args){
   EmbeddedDependencies.Load();
-  if(Array.IndexOf(args,"--native-server")>=0){NativeHfpBridge.Serve();return;}
+  if(Array.IndexOf(args,"--native-server")>=0){var server=new Thread(()=>NativeHfpBridge.Serve());server.SetApartmentState(ApartmentState.MTA);server.Start();server.Join();return;}
   PhoneDirectDial.Initialize();
   if(Array.IndexOf(args,"--snapshot")>=0){try{PhoneSnapshot.Save();}catch{Environment.ExitCode=1;}return;}
   if(Array.IndexOf(args,"--setup")>=0){Application.EnableVisualStyles();Application.Run(new PhoneSetupForm());return;}
@@ -19,6 +19,7 @@ static class PhoneDeck {
  static void Run(string[] args){try{
   var root=AppDomain.CurrentDomain.BaseDirectory;
   if(Array.IndexOf(args,"--native-stop")>=0){NativeHfpBridge.Request("stop");return;}
+  if(Array.IndexOf(args,"--native-audio-setup")>=0){var prepared=NativeHfpBridge.Request("audio");File.WriteAllText(Path.Combine(root,"native-audio.local.txt"),Convert.ToString(prepared["Message"]));return;}
   if(Array.IndexOf(args,"--presentation-test")>=0){PhoneDeckPresentation.Restore(args,false);return;}
   if(Array.IndexOf(args,"--discord-microfone")>=0){DiscordMic.Toggle();return;}
   if(AudioActions.Handle(args))return;

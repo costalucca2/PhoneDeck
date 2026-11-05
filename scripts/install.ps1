@@ -47,7 +47,7 @@ try{
  foreach($name in $aliases){Copy-Item -LiteralPath $artifact -Destination (Join-Path $runtimePath $name) -Force;$copied+=$name}
  foreach($name in $aliases){if((Get-FileHash (Join-Path $runtimePath $name)).Hash -ne $build.ExecutableHash){throw 'Installed alias hash mismatch'}}
  $receipt=if(Test-Path -LiteralPath $receiptPath){Get-Content -LiteralPath $receiptPath -Raw|ConvertFrom-Json}else{[pscustomobject]@{}}
- $fields=@{Product='PhoneDeck';Version=$build.Version;ExecutableHash=$build.ExecutableHash;Sources=$build.Sources;Target='PhoneDeck HFP direct';Backend='HFP direct';Channel='experimental';AudioImplemented=$false;AudioValidated=$false;CallsTested=$false;Test='Exact binary tested with simulated phone. PC call audio not implemented.'}
+ $fields=@{Product='PhoneDeck';Version=$build.Version;ExecutableHash=$build.ExecutableHash;Sources=$build.Sources;Target='PhoneDeck HFP direct';Backend='Windows native HFP';NativeAudioBackend=$true;Channel='experimental';AudioImplemented=$false;AudioValidated=$false;CallsTested=$false;Test='Exact binary tested with simulated phone. Native voice preparation integrated; conversation not validated.'}
  foreach($key in $fields.Keys){$receipt|Add-Member -NotePropertyName $key -NotePropertyValue $fields[$key] -Force}
  Write-Json $receiptPath $receipt;$receiptWritten=$true
  $verified=Get-Content -LiteralPath $receiptPath -Raw|ConvertFrom-Json
@@ -57,7 +57,7 @@ try{
  if($priorExisting.Count){try{Remove-VerifiedBackup $previous;Move-Item -LiteralPath $stage -Destination $previous}catch{Write-Warning ('Installed; backup rotation pending: '+$_.Exception.Message)}}else{Remove-VerifiedBackup $stage}
  $record.State='verified';$record|Add-Member -NotePropertyName InstalledAt -NotePropertyValue ([DateTimeOffset]::Now.ToString('o')) -Force
  Write-Json $recordPath $record
- 'Verified experimental PhoneDeck '+$build.Version+' in both aliases. No calls executed; PC call audio not implemented.'
+ 'Verified experimental PhoneDeck '+$build.Version+' in both aliases. No calls executed; native voice backend integrated, conversation not validated.'
 }catch{
  if(-not $promoted -and (Test-Path -LiteralPath $stage)){
   foreach($name in $priorExisting){Copy-Item -LiteralPath (Join-Path $stage $name) -Destination (Join-Path $runtimePath $name) -Force}
