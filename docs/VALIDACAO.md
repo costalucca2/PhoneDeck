@@ -81,3 +81,10 @@ A ponte Phone Link é minimizada após os comandos; pode ficar visível durante 
 Capturas e URLs temporárias permanecem locais e fora do Git. Regra opcional de Firewall é específica para PhoneDeck.exe/TCP 40521/Private/LocalSubnet; não libera redes públicas.
 
 Na instalação local de verificação, a confirmação administrativa da regra de Firewall foi cancelada e a regra não foi criada. Acesso HTTP pelo próprio PC e leitura do QR passaram; acesso a partir de outro aparelho permanece pendente. Não anunciar o acesso pela LAN como validado.
+
+## Configuração local posterior à versão 1.9.1.25
+
+Ulanzi: + em 4_1; engrenagem em 0_2; Atender em 1_2; Desligar em 2_2. O relógio usa os espaços seguintes. A engrenagem contém Voltar, Microfone e PhoneDeck. A pasta + é reservada para contatos extras. Destinos e argumentos conferidos sem executar chamadas. Firewall específico do guia local foi aplicado após nova autorização administrativa; o acesso desde um celular ainda não foi comprovado. Diagnóstico Bluetooth nativo ativou, mas acesso ao transporte foi negado; backend de chamadas instalado permanece Phone Link.
+
+## 1.10.1.29 — prévia pública experimental
+Testes sem aparelho: interface com contatos fictícios, protocolo HFP e dispatcher do binário exato, leitura de disponibilidade, guia QR local, compilação dos 11 diagnósticos sem execução, instalação limpa, atualização preservando contato fictício, backup único e reinstalação idempotente. Todos passaram localmente. Os testes não fizeram chamadas, não capturaram/reproduziram áudio e não registraram drivers/Appx. A CI Windows repete a verificação; seu resultado deve ser consultado no Actions do commit publicado. Áudio de chamadas no PC continua não implementado; a prévia não comprova telefonia completa.

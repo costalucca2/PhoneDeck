@@ -1,0 +1,12 @@
+using System;using System.IO;using System.Runtime.InteropServices;using System.Text;
+[assembly:System.Reflection.AssemblyFileVersion("0.1.0.18")]
+static class TapiProbe {
+ [StructLayout(LayoutKind.Sequential)]struct Init {public uint Total,Needed,Used,Options;public IntPtr Event;public uint CompletionKey;}
+ [StructLayout(LayoutKind.Sequential)]struct Ext {public uint A,B,C,D;}
+ [DllImport("tapi32.dll",CharSet=CharSet.Unicode)]static extern int lineInitializeExW(out IntPtr app,IntPtr instance,IntPtr callback,string name,out uint count,ref uint version,ref Init init);
+ [DllImport("tapi32.dll")]static extern int lineNegotiateAPIVersion(IntPtr app,uint id,uint low,uint high,out uint version,out Ext ext);
+ [DllImport("tapi32.dll",CharSet=CharSet.Unicode)]static extern int lineGetDevCapsW(IntPtr app,uint id,uint version,uint ext,IntPtr caps);
+ [DllImport("tapi32.dll")]static extern int lineShutdown(IntPtr app);
+ static string Read(IntPtr p,int sizeOff,int offsetOff,int total){int size=Marshal.ReadInt32(p,sizeOff),offset=Marshal.ReadInt32(p,offsetOff);if(size<=0||offset<0||offset>total-size)return "";return Marshal.PtrToStringUni(IntPtr.Add(p,offset),size/2).TrimEnd('\0');}
+ static int Main(){var log=new StringBuilder();IntPtr app=IntPtr.Zero;try{uint count,version=0x20002;var init=new Init{Total=(uint)Marshal.SizeOf(typeof(Init)),Options=2};int hr=lineInitializeExW(out app,IntPtr.Zero,IntPtr.Zero,"PhoneDeck diagnostic",out count,ref version,ref init);log.AppendLine("Initialize="+hr.ToString("X8")+";Devices="+count);if(hr<0)return 1;for(uint id=0;id<count;id++){uint negotiated;Ext ext;hr=lineNegotiateAPIVersion(app,id,0x10004,0x20002,out negotiated,out ext);if(hr<0){log.AppendLine("Device="+id+";Negotiate="+hr.ToString("X8"));continue;}int total=65536;IntPtr caps=Marshal.AllocHGlobal(total);try{for(int i=0;i<total;i+=4)Marshal.WriteInt32(caps,i,0);Marshal.WriteInt32(caps,total);hr=lineGetDevCapsW(app,id,negotiated,0,caps);log.AppendLine("Device="+id+";Caps="+hr.ToString("X8")+";Name="+Read(caps,32,36,total)+";Provider="+Read(caps,12,16,total));}finally{Marshal.FreeHGlobal(caps);}}return 0;}catch(Exception e){log.AppendLine(e.ToString());return 1;}finally{if(app!=IntPtr.Zero)lineShutdown(app);log.AppendLine("No line opened and no calls performed.");File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"tapi-diagnostic.local.txt"),log.ToString());}}
+}
