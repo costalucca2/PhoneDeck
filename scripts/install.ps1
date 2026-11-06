@@ -1,4 +1,4 @@
-﻿param([string]$Runtime=(Join-Path $env:LOCALAPPDATA 'PhoneDeck'))
+param([string]$Runtime=(Join-Path $env:LOCALAPPDATA 'PhoneDeck'))
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $runtimePath=[IO.Path]::GetFullPath($Runtime).TrimEnd('\')
@@ -44,6 +44,7 @@ try{
  if($processes.Count){$recordingLock=New-Object Threading.Mutex($false,'Local\PhoneDeck.ConversationRecording');try{$recordingHeld=$recordingLock.WaitOne(0)}catch [Threading.AbandonedMutexException]{$recordingHeld=$true};if(-not $recordingHeld){throw 'Conversation recording active. Stop and save it before updating PhoneDeck'}}
  foreach($hidden in @($processes|Where-Object {$_.MainWindowHandle -eq 0})){
   $details=Get-CimInstance Win32_Process -Filter ('ProcessId='+$hidden.Id)
+  if($details.CommandLine -match '(?:^|\s)--ulanzi-bridge(?:\s|$)'){$hidden.Kill();$hidden.WaitForExit();continue}
   if($details.CommandLine -notmatch '(?:^|\s)--record-panel(?:\s|$)'){throw 'PhoneDeck background process running. While phone is idle, run PhoneDeck.exe --native-stop, then retry installation'}
   if(-not ('PhoneDeckInstallerWindows' -as [type])){
    Add-Type @"
@@ -59,7 +60,7 @@ public static class PhoneDeckInstallerWindows {
 "@
   }
   [PhoneDeckInstallerWindows]::Close([uint32]$hidden.Id)
-  if(-not $hidden.WaitForExit(3000)){throw 'Idle recorder panel did not close; executable preserved'}
+  if(-not $hidden.WaitForExit(3000)){$hidden.Kill();$hidden.WaitForExit()}
  }
  $processes=@($processes|Where-Object {-not $_.HasExited})
  foreach($process in $processes){[void]$process.CloseMainWindow();if(-not $process.WaitForExit(3000)){$process.Kill();$process.WaitForExit()}}

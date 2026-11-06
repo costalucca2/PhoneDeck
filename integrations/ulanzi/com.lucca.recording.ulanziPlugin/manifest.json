@@ -1,0 +1,58 @@
+{
+  "Author": "Lucca Santana",
+  "Software": {
+    "MinVersion": "2.1.0"
+  },
+  "Icon": "record.svg",
+  "Description": "Indicadores reais de gravação de telas e conversas",
+  "Name": "PhoneDeck Recording",
+  "Type": "JavaScript",
+  "CategoryIcon": "record.svg",
+  "PrivateAPI": true,
+  "Version": "1.0.0",
+  "Category": "PhoneDeck",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "UUID": "com.lucca.phonedeck.recording",
+  "CodePath": "app.js",
+  "Actions": [
+    {
+      "States": [
+        {
+          "Image": "record.svg",
+          "Name": "Estado real"
+        }
+      ],
+      "Icon": "record.svg",
+      "Name": "Gravar telas",
+      "Devices": [],
+      "SupportedInMultiActions": false,
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "UUID": "com.lucca.phonedeck.recording.screen"
+    },
+    {
+      "States": [
+        {
+          "Image": "record.svg",
+          "Name": "Estado real"
+        }
+      ],
+      "Icon": "record.svg",
+      "Name": "Gravar conversa",
+      "Devices": [],
+      "SupportedInMultiActions": false,
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "UUID": "com.lucca.phonedeck.recording.phone"
+    }
+  ]
+}
