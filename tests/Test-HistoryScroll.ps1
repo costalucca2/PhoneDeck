@@ -9,6 +9,7 @@ Add-Type @"
 using System;using System.Runtime.InteropServices;
 public static class HistoryScrollCheck {
  [DllImport("user32.dll",EntryPoint="GetWindowLongW")]public static extern int Style(IntPtr h,int index);
+ [DllImport("user32.dll")]public static extern bool ShowScrollBar(IntPtr h,int bar,bool show);
  [DllImport("user32.dll")]public static extern IntPtr SendMessage(IntPtr h,int message,IntPtr w,IntPtr l);
 }
 "@
@@ -18,6 +19,7 @@ try{
  $form.Show();[Windows.Forms.Application]::DoEvents();$bar=$view.Controls.Find('HistoryScroll',$true)[0]
  Assert ($bar.Visible -and $bar.Width -le 16) 'Slim scrollbar missing or too wide'
  Assert (([HistoryScrollCheck]::Style($view.Handle,-16) -band 0x00300000) -eq 0) 'Native white scrollbar still present'
+ [void][HistoryScrollCheck]::ShowScrollBar($view.Handle,1,$true);Assert (([HistoryScrollCheck]::Style($view.Handle,-16) -band 0x00300000) -eq 0) 'Native bar can reappear through style changes'
  [void][HistoryScrollCheck]::SendMessage($view.Handle,0x20A,[IntPtr](-120 -shl 16),[IntPtr]::Zero);[Windows.Forms.Application]::DoEvents()
  Assert ($view.TopItem.Index -gt 0) 'Mouse wheel stopped working'
  $type.GetMethod('ScrollToRow').Invoke($view,[object[]]@(0))|Out-Null
