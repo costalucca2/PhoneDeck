@@ -1,6 +1,6 @@
 # PhoneDeck
 
-**Prévia experimental 1.16.0.47 — voz configurável e gravação manual; conversa real ainda não validada.**
+**Prévia experimental 1.16.1.51 — voz configurável e gravação manual; conversa real ainda não validada.**
 
 Janela de contatos e controle Bluetooth HFP direto, com os mesmos comandos em Ulanzi, Stream Deck ou teclado macro. O caminho de chamadas não abre nem automatiza o Vincular ao Celular. Android ainda não foi validado em aparelho real. [Instalação e atalhos](docs/INSTALACAO.md).
 
