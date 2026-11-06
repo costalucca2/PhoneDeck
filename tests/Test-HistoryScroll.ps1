@@ -1,4 +1,4 @@
-param([string]$Executable=(Join-Path $PSScriptRoot '..\out\PhoneDeck.exe'))
+﻿param([string]$Executable=(Join-Path $PSScriptRoot '..\out\PhoneDeck.exe'))
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing
 $a=[Reflection.Assembly]::LoadFrom((Resolve-Path $Executable).Path)
@@ -16,7 +16,7 @@ public static class HistoryScrollCheck {
 function Assert($ok,$text){if(-not $ok){throw $text}}
 try{
  foreach($i in 1..100){$item=[Windows.Forms.ListViewItem]::new('Synthetic contact '+$i);$item.SubItems.Add('12:34:56')|Out-Null;$view.Items.Add($item)|Out-Null}
- $form.Show();[Windows.Forms.Application]::DoEvents();$bar=$view.Controls.Find('HistoryScroll',$true)[0]
+ $form.Show();[Windows.Forms.Application]::DoEvents();$bar=$form.Controls.Find('HistoryScroll',$true)[0];Assert ($bar.Parent -ne $view -and $bar.Parent -eq $view.Parent) 'Scrollbar must be outside the native scrolling window'
  Assert ($bar.Visible -and $bar.Width -le 16) 'Slim scrollbar missing or too wide'
  Assert (([HistoryScrollCheck]::Style($view.Handle,-16) -band 0x00300000) -eq 0) 'Native white scrollbar still present'
  [void][HistoryScrollCheck]::ShowScrollBar($view.Handle,1,$true);Assert (([HistoryScrollCheck]::Style($view.Handle,-16) -band 0x00300000) -eq 0) 'Native bar can reappear through style changes'
@@ -30,7 +30,9 @@ try{
  Assert ($view.TopItem.Index -gt 80 -and $view.Items[99].Bounds.Bottom -le $view.ClientSize.Height) 'Dragging cannot reach the last record'
  $bar.GetType().GetMethod('OnKeyDown',$flags).Invoke($bar,[object[]]@([Windows.Forms.KeyEventArgs]::new('Home')))|Out-Null
  Assert ($view.TopItem.Index -eq 0) 'Keyboard Home failed'
- foreach($light in $false,$true){$a.GetType('UiPreferences').GetMethod('Set').Invoke($null,[object[]]@($light,$false,$false))|Out-Null;[Windows.Forms.Application]::DoEvents();$bitmap=[Drawing.Bitmap]::new($view.Width,$view.Height);try{$view.DrawToBitmap($bitmap,$view.ClientRectangle);if(-not $light){Assert ($bitmap.GetPixel($bitmap.Width-3,5).R -lt 150) "White header filler remains"};$name=if($light){'light'}else{'dark'};$bitmap.Save((Join-Path (Split-Path (Resolve-Path $Executable).Path) ('history-scroll-'+$name+'.local.png')))}finally{$bitmap.Dispose()}}
+ $stable=$bar.Bounds
+ foreach($i in 1..60){[void][HistoryScrollCheck]::SendMessage($view.Handle,0x20A,[IntPtr]($(if($i%2){-120}else{120}) -shl 16),[IntPtr]::Zero);[Windows.Forms.Application]::DoEvents();Assert ($bar.Bounds -eq $stable -and $bar.Visible) 'Scrolling displaced the separate scrollbar'}
+ foreach($light in $false,$true){$a.GetType('UiPreferences').GetMethod('Set').Invoke($null,[object[]]@($light,$false,$false))|Out-Null;[Windows.Forms.Application]::DoEvents();$bitmap=[Drawing.Bitmap]::new($view.Parent.Width,$view.Parent.Height);try{$view.Parent.DrawToBitmap($bitmap,$view.Parent.ClientRectangle);if(-not $light){Assert ($bitmap.GetPixel($bitmap.Width-3,5).R -lt 150) "White header filler remains"};$name=if($light){'light'}else{'dark'};$bitmap.Save((Join-Path (Split-Path (Resolve-Path $Executable).Path) ('history-scroll-'+$name+'.local.png')))}finally{$bitmap.Dispose()}}
  $view.Items.Clear();[Windows.Forms.Application]::DoEvents();Assert (-not $bar.Visible) 'Empty history retained a scrollbar'
  'PASS: slim themed scrollbar; native arrows removed; wheel, drag to final row, keyboard and empty state; dark/light images. Synthetic rows only.'
 }finally{$form.Dispose()}

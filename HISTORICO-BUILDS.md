@@ -46,3 +46,5 @@ Na 1.10.1.29, o prazo de cada solicitação também é validado antes das instru
 
 - 1.16.3.55–60: candidatos não promovidos; reservas preservadas durante revisão do recorte nativo, layout e interação das listas suspensas.
 - 1.16.3.61: instalado nos dois aliases, hash conferido. Barras nativas recortadas antes da pintura; controles finos próprios em listas, logs, configurações e listas suspensas. Histórico impede reaparecimento dos estilos nativos. Roda, arrasto, teclado, temas e recorte verificados; 15 testes passaram no artefato entregue. Ulanzi reconectada; backend de áudio inalterado, nenhuma chamada real de teste.
+
+- 1.16.4.62: barra do histórico principal movida para controle irmão, fora da área deslocada pela lista nativa. Estilos de recorte de filhos/irmãos impedem sobreposição. Verificados 60 giros alternados sem deslocar ou ocultar a barra, arrasto, teclado e temas; suíte completa passou. Instalado nos dois aliases com hash conferido; nenhuma chamada de teste.
