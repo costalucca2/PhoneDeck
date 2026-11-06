@@ -23,20 +23,25 @@ using PhoneDeckNative;
 static class NativeHfpBridge {
  static string PipeName {get{return "PhoneDeck.SystemHfp.v2."+WindowsIdentity.GetCurrent().User.Value;}}
  public static Dictionary<string,object> Request(string action,string number=null){
+  return RequestCore(action,number,true);
+ }
+ public static Dictionary<string,object> RequestIfRunning(string action){return RequestCore(action,null,false);}
+ static Dictionary<string,object> RequestCore(string action,string number,bool start){
   using(var pipe=new NamedPipeClientStream(".",PipeName,PipeDirection.InOut,PipeOptions.Asynchronous)){
    try{pipe.Connect(150);}catch(TimeoutException){
+    if(!start)return null;
     if(action=="stop")return new Dictionary<string,object>{{"Ok",true},{"Message","Serviço já encerrado."}};
     NativePackageActivation.Start();
     pipe.Connect(5000);
    }
    var work=Task.Run(()=>{
     using(var writer=new StreamWriter(pipe,new UTF8Encoding(false),1024,true))using(var reader=new StreamReader(pipe,Encoding.UTF8,false,1024,true)){
-     writer.AutoFlush=true;writer.WriteLine(new JavaScriptSerializer().Serialize(new Dictionary<string,object>{{"Action",action},{"Number",number??""},{"DeadlineUtcTicks",DateTime.UtcNow.AddSeconds(20).Ticks}}));
+     writer.AutoFlush=true;writer.WriteLine(new JavaScriptSerializer().Serialize(new Dictionary<string,object>{{"Action",action},{"Number",number??""},{"DeadlineUtcTicks",DateTime.UtcNow.AddSeconds(start?20:3).Ticks}}));
      var line=reader.ReadLine();if(line==null||line.Length>16384)throw new IOException("Resposta inválida do serviço PhoneDeck.");
      return new JavaScriptSerializer().Deserialize<Dictionary<string,object>>(line);
     }
    });
-   if(!work.Wait(25000))throw new TimeoutException("PhoneDeck não confirmou o comando. Ele não será repetido automaticamente.");
+   if(!work.Wait(start?25000:5000))throw new TimeoutException("PhoneDeck não confirmou o comando. Ele não será repetido automaticamente.");
    var result=work.Result;if(!Convert.ToBoolean(result["Ok"]))throw new InvalidOperationException(Convert.ToString(result["Message"]));return result;
   }
  }
@@ -77,6 +82,7 @@ static class NativePackageActivation {
 sealed class SystemHfpSession:IDisposable {
  readonly SystemHfp phone=new SystemHfp();
  public Dictionary<string,object> Handle(string action,string number,DateTime deadline){
+  if((action=="mic-on"||action=="mic-off")&&!phone.IsPhysicallyConnected)throw new InvalidOperationException("Sem conexão nativa para sincronizar o mudo da chamada.");
   if(action=="stop"){
    if(DateTime.UtcNow>=deadline)throw new TimeoutException("Solicitação expirada.");
    if(PhoneCallManager.IsCallActive||PhoneCallManager.IsCallIncoming)throw new InvalidOperationException("Chamada ativa; serviço preservado.");

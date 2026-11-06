@@ -15,6 +15,7 @@ namespace PhoneDeckNative {
   bool Active {get;}
   void Command(string action,string number,DateTime deadline);
   void LocalAudio(DateTime deadline);
+  void MicrophoneMute(bool muted,DateTime deadline);
  }
  // Testable policy; call mutations are never retried, including after an audio error.
  public sealed class SystemHfpDispatch {
@@ -23,7 +24,8 @@ namespace PhoneDeckNative {
   static void Deadline(DateTime limit){if(DateTime.UtcNow>=limit)throw new TimeoutException("Solicitação expirada; nenhum novo comando enviado.");}
   public Dictionary<string,object> Execute(string action,string number,DateTime limit){
    Deadline(limit);
-   if(action!="status"&&action!="dial"&&action!="answer"&&action!="hangup"&&action!="audio")throw new ArgumentException("Comando inválido.");
+   bool microphone=action=="mic-on"||action=="mic-off";
+   if(action!="status"&&action!="dial"&&action!="answer"&&action!="hangup"&&action!="audio"&&!microphone)throw new ArgumentException("Comando inválido.");
    if(action=="dial"&&!Regex.IsMatch(number??"",@"\A(?:\+[1-9][0-9]{7,14}|[0-9]{8,14})\z"))throw new ArgumentException("Número inválido.");
    phone.Connect(limit);Deadline(limit);
    uint count=phone.CallCount();bool incoming=phone.Incoming,active=phone.Active;
@@ -32,17 +34,19 @@ namespace PhoneDeckNative {
    if(action=="hangup"&&count!=1)throw new InvalidOperationException("Desligar exige uma única chamada confirmada.");
    if(action=="audio"&&(count!=0||incoming||active))throw new InvalidOperationException("Preparação exige celular ocioso.");
    bool sent=false,audio=false;string warning="";
+   if(microphone){Deadline(limit);phone.MicrophoneMute(action=="mic-off",limit);}
    if(action=="dial"||action=="answer"||action=="hangup"){Deadline(limit);phone.Command(action,number,limit);sent=true;}
    if(action=="audio"||action=="dial"||action=="answer"){
     try{Deadline(limit);phone.LocalAudio(limit);audio=true;}catch(Exception e){if(!sent)throw;warning=" Comando de chamada confirmado, mas preparação do áudio falhou: "+e.Message+" Não repita a ligação.";}
    }
-   return new Dictionary<string,object>{{"Ok",true},{"Backend","HFP nativo Windows"},{"Device","Celular Bluetooth"},{"Connected",true},{"Call",active?1:0},{"Setup",incoming?1:0},{"Held",0},{"CallCount",count},{"AudioPrepared",audio},{"AudioValidated",false},{"Message",(sent?"Comando confirmado pelo transporte nativo.":audio?"Rota de voz local aceita pelo Windows; conversa ainda não validada.":"Controle nativo conectado; conversa ainda não validada.")+warning}};
+   return new Dictionary<string,object>{{"Ok",true},{"Backend","HFP nativo Windows"},{"Device","Celular Bluetooth"},{"Connected",true},{"Call",active?1:0},{"Setup",incoming?1:0},{"Held",0},{"CallCount",count},{"AudioPrepared",audio},{"AudioValidated",false},{"Message",(microphone?"Mudo do transporte sincronizado.":sent?"Comando confirmado pelo transporte nativo.":audio?"Rota de voz local aceita pelo Windows; conversa ainda não validada.":"Controle nativo conectado; conversa ainda não validada.")+warning}};
   }
  }
  // Windows 10 internal ABI. Resolve the exact interfaces or fail closed; no UI/URI fallback.
  public sealed class SystemHfp : ISystemHfp {
   IntPtr transport,device;bool initialized;BluetoothDevice link;
   public bool IsConnected {get{return device!=IntPtr.Zero;}}
+  public bool IsPhysicallyConnected {get{return device!=IntPtr.Zero&&link!=null&&link.ConnectionStatus==BluetoothConnectionStatus.Connected;}}
   public bool AudioPrepared {get;private set;}
   [DllImport("combase.dll")]static extern int RoInitialize(uint mode);
   [DllImport("combase.dll")]static extern void RoUninitialize();
@@ -87,7 +91,8 @@ namespace PhoneDeckNative {
    }catch{Dispose();throw;}finally{Release(factory);Release(instance);Release(activation);if(id!=IntPtr.Zero)WindowsDeleteString(id);if(name!=IntPtr.Zero)WindowsDeleteString(name);}
   }
   public uint CallCount(){IntPtr calls;Check(Method<ObjectMethod>(device,12)(device,out calls));try{uint count;Check(Method<SizeMethod>(calls,7)(calls,out count));return count;}finally{Release(calls);}}
-  public void LocalAudio(DateTime limit){AudioPrepared=false;Limit(limit);IntPtr op;Check(Method<AudioMethod>(device,13)(device,1,out op));if(Result(op,limit)!=0)throw new InvalidOperationException("Windows recusou a transferência de áudio ao PC.");AudioPrepared=true;}
+  public void LocalAudio(DateTime limit){AudioPrepared=false;Limit(limit);IntPtr op;Check(Method<AudioMethod>(device,13)(device,1,out op));if(Result(op,limit)!=0)throw new InvalidOperationException("Windows recusou a transferência de áudio ao PC.");MicrophoneMute(AudioConfiguration.InputMuted(),limit);AudioPrepared=true;}
+  public void MicrophoneMute(bool muted,DateTime limit){Limit(limit);IntPtr op;Check(Method<AudioMethod>(device,14)(device,muted?(byte)1:(byte)0,out op));if(Result(op,limit)!=0)throw new InvalidOperationException("Windows recusou sincronizar o microfone da chamada.");}
   public void Command(string action,string number,DateTime limit){Limit(limit);IntPtr op;if(action=="dial"){IntPtr text=Text(number);try{Check(Method<StringMethod>(device,15)(device,text,out op));}finally{WindowsDeleteString(text);}}else if(action=="answer")Check(Method<ObjectMethod>(device,17)(device,out op));else if(action=="hangup")Check(Method<ObjectMethod>(device,19)(device,out op));else throw new ArgumentException("Comando de chamada inválido.");if(Result(op,limit)!=0)throw new InvalidOperationException("Telefone recusou o comando; nenhuma repetição será feita.");}
   public void Dispose(){AudioPrepared=false;if(link!=null){link.Dispose();link=null;}Release(device);device=IntPtr.Zero;Release(transport);transport=IntPtr.Zero;if(initialized){RoUninitialize();initialized=false;}}
  }

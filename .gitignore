@@ -13,3 +13,5 @@ telefones-contatos.json
 *.cer
 *.key
 *.pem
+*.wav
+recordings/

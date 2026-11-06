@@ -1,0 +1,37 @@
+# Voz, áudio e gravação
+
+Configurações → Voz e Áudio reúne microfone, saída, nível, mudo, medidor e redução de ruído. Os campos seguem o padrão visual de seleção do TradeON, com desenho próprio de fundo, seta e lista. Sol/lua alternam claro/escuro; US EN / BR PT alternam o idioma. A preferência fica em preferences.local.json, com as chaves on-tema e on-idioma. O mecanismo da família ON foi adaptado ao WinForms; os SVGs originais de sol/lua do NucleON são incorporados ao executável e renderizados como vetores. Cabeçalho compacto, controles sem moldura pesada e janelas separadas sincronizam preferências pelo arquivo local. Dados digitados e dispositivos selecionados são preservados ao alternar.
+
+## Entrada e processamento
+
+Os dispositivos selecionados são os padrões de comunicação do Windows. Isso também pode afetar outros programas que usam esse padrão. O nível modifica o microfone selecionado e não ultrapassa o limite do dispositivo. Ganho digital adicional acima de 100%, ganho automático e cancelamento de eco próprio ainda não estão implementados no transporte da chamada.
+
+O mudo é sincronizado com SetMicMuteAsync do transporte HFP: o estado Core Audio sozinho não garantia que o microfone interno da chamada estivesse liberado. A preparação da voz também aplica essa sincronização. Uma falha é informada e não repete comandos de chamada.
+
+“Verificar microfone” lê o sinal durante seis segundos, sem salvar ou reproduzir áudio. Sinal de entrada não comprova que o interlocutor recebeu a voz. O teste é iniciado pelo usuário e pode ser interrompido.
+
+A organização se inspira nos controles documentados do [Discord](https://support.discord.com/hc/en-us/articles/33030151293079-Discord-Voice-Video-Streaming-Guide). O [guia técnico do Discord](https://github.com/discord/discord-api-docs/blob/main/developers/discord-social-sdk/development-guides/managing-voice-chat.mdx) distingue supressão WebRTC, cancelamento de eco, ganho e Krisp. Esses componentes proprietários não foram copiados para o PhoneDeck.
+
+## Redução de ruído opcional
+
+Em NVIDIA GTX/RTX compatível, o [RTX Voice oficial](https://www.nvidia.com/en-us/geforce/guides/nvidia-rtx-voice-setup-guide/) fornece um microfone virtual processado. O instalador e os modelos não são distribuídos neste repositório. Instalação e permissões do componente são separadas do pacote PhoneDeck.
+
+Com RTX Voice instalado, selecione a origem física e a intensidade no PhoneDeck. Ativar a redução escolhe o microfone virtual para comunicação; desativar escolhe a origem física. Alterar o processador exige celular ocioso e nenhuma gravação ativa, porque reinicia o aplicativo de processamento. A execução usa a pasta do RTX Voice como diretório de trabalho para localizar o modelo de ruído.
+
+A configuração observada usa microfone físico → RTX Voice → entrada de comunicação. A saída continua na caixinha física, com processamento de alto-falante desligado. Não há garantia de funcionamento em GPU sem suporte, nem paridade com todos os efeitos do Discord.
+
+## Gravar conversa
+
+“Gravar conversa” abre um minipainel. Verde inicia; vermelho para e salva. O painel informa o tempo e permite abrir a pasta. Quando encontra o cartão Chamada do Windows, posiciona-se abaixo dele, sem modificar seu processo. Arrastar o painel fixa a posição escolhida. Uma chamada comandada pelo PhoneDeck ou Ulanzi pode abrir o painel, mas nunca inicia gravação automaticamente.
+
+O gravador usa WASAPI compartilhado: microfone de comunicação e loopback da saída de comunicação selecionada. Portanto, outros sons reproduzidos nessa saída também podem entrar no arquivo. O sinal do microfone filtrado é gravado quando a entrada selecionada é RTX Voice. Não são acionados comandos de telefone para gravar.
+
+Destino padrão: Desktop/Gravacoes/PhoneDeck. Arquivos WAV PCM, 48 kHz, mono, 16 bits, aproximadamente 5,8 MB/minuto. O cabeçalho é atualizado periodicamente e no encerramento. O limite de WAV de 4 GiB encerra e salva a gravação; falhas de captura aparecem no painel. Não existe pausa, gravação oculta, início automático ou envio externo de áudio.
+
+Uma trava impede dois gravadores simultâneos. Fechar o painel durante a gravação salva o arquivo. O instalador recusa atualizar um processo com gravação ativa e não apaga gravações. --record-panel abre o painel sem começar a capturar.
+
+## Evidência e limites
+
+Os testes usam sinais sintéticos para verificar mistura das duas fontes, WAV, salvamento, estados verde/vermelho, temporizador, exclusão mútua e falhas. Preferências e campos foram conferidos em claro/escuro e PT/EN. No ambiente local, os dois streams reais foram inicializados e imediatamente parados antes de ler amostras, sem arquivo de áudio nem chamada.
+
+Acesso HFP, rota local e sincronização de mudo foram aceitos pelo Windows. Isso não comprova conversa bidirecional nem gravação do interlocutor em chamada real. Não foram realizadas chamadas de teste. O painel “Cha” corresponde ao título cortado “Chamada” do componente CallingShellApp do Windows, identificado pelos recursos locais; não é o nome do PhoneDeck.

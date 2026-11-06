@@ -3,13 +3,16 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Threading;
-[assembly:System.Reflection.AssemblyVersion("1.11.0.32")]
-[assembly:System.Reflection.AssemblyFileVersion("1.11.0.32")]
+[assembly:System.Reflection.AssemblyVersion("1.13.3.39")]
+[assembly:System.Reflection.AssemblyFileVersion("1.13.3.39")]
 static class PhoneDeck {
  [STAThread]static void Main(string[] args){
   EmbeddedDependencies.Load();
   if(Array.IndexOf(args,"--native-server")>=0){var server=new Thread(()=>NativeHfpBridge.Serve());server.SetApartmentState(ApartmentState.MTA);server.Start();server.Join();return;}
+  UiPreferences.Install();
   PhoneDirectDial.Initialize();
+  if(Array.IndexOf(args,"--audio-settings")>=0){Application.EnableVisualStyles();Application.Run(new AudioSettingsForm());return;}
+  if(Array.IndexOf(args,"--record-panel")>=0){Application.EnableVisualStyles();Application.Run(new RecordingPanel());return;}
   if(Array.IndexOf(args,"--snapshot")>=0){try{PhoneSnapshot.Save();}catch{Environment.ExitCode=1;}return;}
   if(Array.IndexOf(args,"--setup")>=0){Application.EnableVisualStyles();Application.Run(new PhoneSetupForm());return;}
   if(args.Length==0||Array.IndexOf(args,"--ui")>=0){if(PhoneDeckPresentation.ActivateExisting())return;Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);Application.Run(new PhoneDeckWindow(Array.IndexOf(args,"--ui-capture")>=0));return;}

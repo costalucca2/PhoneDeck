@@ -10,6 +10,7 @@ $record=Get-Content -LiteralPath $recordPath -Raw|ConvertFrom-Json
 if($record.State -notin @('tested','verified') -or $record.ExecutableHash -ne $build.ExecutableHash){throw 'This exact artifact has not passed tests; run scripts/verify.ps1'}
 if((Get-FileHash $artifact).Hash -ne $build.ExecutableHash){throw 'Artifact hash mismatch'}
 foreach($entry in $build.Sources){if((Get-FileHash (Join-Path $root ('src\'+$entry.File))).Hash -ne $entry.Hash){throw 'Source changed after build'}}
+foreach($entry in $build.Assets){if((Get-FileHash (Join-Path $root ('assets\'+$entry.File))).Hash -ne $entry.Hash){throw 'SVG asset changed after build'}}
 if(-not (Test-Path -LiteralPath $runtimePath)){New-Item -ItemType Directory -Path $runtimePath|Out-Null}
 if((Get-Item -LiteralPath $runtimePath).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Runtime must not be a junction'}
 $lock=[IO.File]::Open((Join-Path $runtimePath 'ligar-terra-install.lock'),[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)
@@ -17,7 +18,7 @@ $stage=Join-Path $runtimePath ('previous-'+$build.Version+'.local')
 $previous=Join-Path $runtimePath 'ligar-terra-anterior'
 $receiptPath=Join-Path $runtimePath 'ligar-terra-instalacao.json'
 $aliases=@('PhoneDeck.exe','LigarTerra.exe')
-$priorExisting=@();$copied=@();$promoted=$false;$receiptWritten=$false
+$priorExisting=@();$copied=@();$promoted=$false;$receiptWritten=$false;$recordingLock=$null;$recordingHeld=$false
 function Write-Json($path,$value){
  $temp=$path+'.local.tmp'
  [IO.File]::WriteAllText($temp,($value|ConvertTo-Json -Depth 12),[Text.UTF8Encoding]::new($false))
@@ -40,7 +41,27 @@ try{
  }
  $targets=@($aliases|ForEach-Object {Join-Path $runtimePath $_})
  $processes=@(Get-Process PhoneDeck,LigarTerra -ErrorAction SilentlyContinue|Where-Object {$_.Path -and $targets -contains $_.Path})
- if(@($processes|Where-Object {$_.MainWindowHandle -eq 0}).Count){throw 'PhoneDeck background process running. While phone is idle, run PhoneDeck.exe --native-stop, then retry installation'}
+ if($processes.Count){$recordingLock=New-Object Threading.Mutex($false,'Local\PhoneDeck.ConversationRecording');try{$recordingHeld=$recordingLock.WaitOne(0)}catch [Threading.AbandonedMutexException]{$recordingHeld=$true};if(-not $recordingHeld){throw 'Conversation recording active. Stop and save it before updating PhoneDeck'}}
+ foreach($hidden in @($processes|Where-Object {$_.MainWindowHandle -eq 0})){
+  $details=Get-CimInstance Win32_Process -Filter ('ProcessId='+$hidden.Id)
+  if($details.CommandLine -notmatch '(?:^|\s)--record-panel(?:\s|$)'){throw 'PhoneDeck background process running. While phone is idle, run PhoneDeck.exe --native-stop, then retry installation'}
+  if(-not ('PhoneDeckInstallerWindows' -as [type])){
+   Add-Type @"
+using System;using System.Runtime.InteropServices;
+public static class PhoneDeckInstallerWindows {
+ delegate bool Callback(IntPtr window,IntPtr data);
+ [DllImport("user32.dll")]static extern bool EnumWindows(Callback callback,IntPtr data);
+ [DllImport("user32.dll")]static extern uint GetWindowThreadProcessId(IntPtr window,out uint pid);
+ [DllImport("user32.dll")]static extern bool IsWindowVisible(IntPtr window);
+ [DllImport("user32.dll")]static extern bool PostMessage(IntPtr window,uint message,IntPtr w,IntPtr l);
+ public static void Close(uint owner){EnumWindows((window,data)=>{uint pid;GetWindowThreadProcessId(window,out pid);if(pid==owner&&IsWindowVisible(window))PostMessage(window,0x10,IntPtr.Zero,IntPtr.Zero);return true;},IntPtr.Zero);}
+}
+"@
+  }
+  [PhoneDeckInstallerWindows]::Close([uint32]$hidden.Id)
+  if(-not $hidden.WaitForExit(3000)){throw 'Idle recorder panel did not close; executable preserved'}
+ }
+ $processes=@($processes|Where-Object {-not $_.HasExited})
  foreach($process in $processes){[void]$process.CloseMainWindow();if(-not $process.WaitForExit(3000)){$process.Kill();$process.WaitForExit()}}
  New-Item -ItemType Directory -Path $stage|Out-Null
  foreach($name in @($aliases)+@('ligar-terra-instalacao.json')){if(Test-Path -LiteralPath (Join-Path $runtimePath $name)){Copy-Item -LiteralPath (Join-Path $runtimePath $name) -Destination (Join-Path $stage $name);$priorExisting+=$name}}
@@ -65,4 +86,4 @@ try{
   if($receiptWritten -and 'ligar-terra-instalacao.json' -notin $priorExisting){Remove-Item -LiteralPath $receiptPath -Force}
  }
  throw
-}finally{$lock.Dispose()}
+}finally{if($recordingHeld){$recordingLock.ReleaseMutex()};if($recordingLock){$recordingLock.Dispose()};$lock.Dispose()}
