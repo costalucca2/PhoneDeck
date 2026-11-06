@@ -3,8 +3,8 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Threading;
-[assembly:System.Reflection.AssemblyVersion("1.14.1.42")]
-[assembly:System.Reflection.AssemblyFileVersion("1.14.1.42")]
+[assembly:System.Reflection.AssemblyVersion("1.15.0.43")]
+[assembly:System.Reflection.AssemblyFileVersion("1.15.0.43")]
 static class PhoneDeck {
  [STAThread]static void Main(string[] args){
   EmbeddedDependencies.Load();

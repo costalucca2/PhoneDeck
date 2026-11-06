@@ -24,6 +24,7 @@ try{
   $view=$t.GetField('recent',$flags).GetValue($f)
   Assert ($view.Items.Count -eq 2 -and $view.Columns.Count -eq 5) 'UI did not display local history'
   Assert (@($view.Items|Where-Object {$_.SubItems[4].Text -eq 'Comando aceito'}).Count -eq 1) 'UI falsely labels acknowledgement'
+  [void]$t.GetMethod('OpenHistoryEntry',$flags).Invoke($f,[object[]]@($view.Items[0]));[Windows.Forms.Application]::DoEvents();$details=$t.GetField('historyDetails',$flags).GetValue($f);Assert ($null -ne $details -and $details.Visible) 'History click did not open details';$details.Close()
   [void]$t.GetMethod('RenderHistory',$flags).Invoke($f,[object[]]@([CallHistoryResult]::new()))
   Assert ($view.Items.Count -eq 0 -and $t.GetField('syncLabel',$flags).GetValue($f).Text.Contains('Nenhum comando')) 'Empty state missing'
  }finally{$f.Dispose()}

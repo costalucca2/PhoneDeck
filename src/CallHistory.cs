@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Web.Script.Serialization;
 
 public sealed class CallHistoryRow {
- public string Contact,Number,Action,Outcome="requested",Detail,Journal;
+ public string Contact,Number,Action,Outcome="requested",Detail,Journal,SessionId;
  public DateTimeOffset RequestedAt;
 }
 public sealed class CallHistoryResult {
@@ -33,7 +33,7 @@ public static class CallHistory {
      var entry=json.Deserialize<Dictionary<string,object>>(payload);if(Convert.ToInt64(entry["Sequence"])!=++sequence)throw new InvalidDataException();string kind=Convert.ToString(entry["Event"]);var data=entry["Data"] as Dictionary<string,object>;if(data==null||!data.ContainsKey("Action"))continue;string action=Convert.ToString(data["Action"]);
      if(kind=="call_command_requested"){
       var context=data["Context"] as Dictionary<string,object>;if(context==null)throw new InvalidDataException();DateTimeOffset time;if(!DateTimeOffset.TryParse(Convert.ToString(entry["Utc"]),out time))throw new InvalidDataException();
-      var row=new CallHistoryRow{Contact=Value(context,"ContactName"),Number=Value(context,"NumberDialed"),Action=action,RequestedAt=time,Journal=file};rows.Add(row);pending[action]=row;
+      var row=new CallHistoryRow{Contact=Value(context,"ContactName"),Number=Value(context,"NumberDialed"),Action=action,RequestedAt=time,Journal=file,SessionId=Value(context,"CallSessionId")};rows.Add(row);pending[action]=row;
      }else if((kind=="call_command_confirmed"||kind=="call_command_failed")&&pending.ContainsKey(action)){
       var row=pending[action];row.Outcome=kind=="call_command_failed"?"failed":"confirmed";row.Detail=Value(data,"Error");pending.Remove(action);
      }
