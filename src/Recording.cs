@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text;
 using System.Diagnostics;
@@ -29,9 +29,10 @@ public sealed class ConversationRecorder {
   public void Add(float[] values,int rate){if(rate<8000||rate>384000)throw new InvalidDataException("Unexpected audio sample rate");Interlocked.Add(ref received,values.LongLength);sampleRate=rate;lock(data){foreach(float value in values){float current=float.IsNaN(value)||float.IsInfinity(value)?0:Math.Max(-1,Math.Min(1,value));if(first){previous=current;first=false;}while(next<=position){float fraction=(float)Math.Max(0,Math.Min(1,next-(position-1)));if(data.Count>=144000)throw new IOException("Recording cannot keep up with audio");data.Enqueue(previous+(current-previous)*fraction);next+=rate/48000.0;}position++;previous=current;}}}
   public float Take(){lock(data){if(data.Count>0)return data.Dequeue();Interlocked.Increment(ref padding);return 0;}}
  }
+ void Publish(string phase){RecordingStatus.Write(Path.GetDirectoryName(Path.GetDirectoryName(FilePath)),phase,elapsed.Elapsed.TotalSeconds);}
  void Run(string input,string output){bool owned=false;var mic=new Samples();var remote=new Samples();Task observer=null;using(var mutex=new Mutex(false,MutexName)){
   try{try{owned=mutex.WaitOne(0);}catch(AbandonedMutexException){owned=true;}if(!owned)throw new InvalidOperationException("Another PhoneDeck recorder is active");
-   evidence=new RecordingEvidence(Path.GetDirectoryName(FilePath),recordingId,metadata);evidence.Event("audio_sources_selected",new{InputEndpointId=input,OutputEndpointId=output,Scope="Microphone plus all audio on the selected output"});
+   Publish("starting");evidence=new RecordingEvidence(Path.GetDirectoryName(FilePath),recordingId,metadata);evidence.Event("audio_sources_selected",new{InputEndpointId=input,OutputEndpointId=output,Scope="Microphone plus all audio on the selected output"});
    if(metadata!=null&&metadata.ContainsKey("MonitorHfp")&&Convert.ToBoolean(metadata["MonitorHfp"]))observer=Task.Factory.StartNew(()=>{string last=null;while(!cancel.Token.WaitHandle.WaitOne(5000)){try{var observed=CallAudit.Observe();string current=new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(observed);if(current!=last){evidence.Event("call_state_observed",observed);last=current;}}catch(Exception e){Error="Falha no registro de estado: "+e.Message;cancel.Cancel();}}},TaskCreationOptions.LongRunning);
    using(var a=new ManualResetEventSlim())using(var b=new ManualResetEventSlim()){
     Exception captureError=null;Action<Exception> fail=e=>{Interlocked.CompareExchange(ref captureError,e,null);cancel.Cancel();};
@@ -41,15 +42,15 @@ public sealed class ConversationRecorder {
      if(!a.Wait(6000)||!b.Wait(6000))throw new TimeoutException("Audio capture did not start");if(captureError!=null)throw captureError;
      evidence.Event("audio_sources_ready",new{Input=input,Output=output});
      using(var file=new FileStream(FilePath,FileMode.CreateNew,FileAccess.ReadWrite,FileShare.Read))using(var writer=new BinaryWriter(file,Encoding.ASCII)){
-      WriteHeader(writer,0);long samples=0,lastHeader=0,lastCheckpoint=0;elapsed.Start();Started=true;try{while(!cancel.IsCancellationRequested){long target=(long)(elapsed.Elapsed.TotalSeconds*48000);while(samples<target){int count=(int)Math.Min(960,target-samples);for(int i=0;i<count;i++){float sample=(mic.Take()+remote.Take())*.5f;writer.Write((short)Math.Round(Math.Max(-1,Math.Min(1,sample))*32767));}samples+=count;}
-       if(samples*2>=uint.MaxValue-8192)throw new IOException("WAV limit reached; recording saved");if(samples-lastHeader>=48000){long end=file.Position;file.Position=0;WriteHeader(writer,(uint)(samples*2));file.Position=end;writer.Flush();file.Flush(true);lastHeader=samples;}Thread.Sleep(10);
+      WriteHeader(writer,0);long samples=0,lastHeader=0,lastCheckpoint=0;elapsed.Start();Started=true;Publish("recording");try{while(!cancel.IsCancellationRequested){long target=(long)(elapsed.Elapsed.TotalSeconds*48000);while(samples<target){int count=(int)Math.Min(960,target-samples);for(int i=0;i<count;i++){float sample=(mic.Take()+remote.Take())*.5f;writer.Write((short)Math.Round(Math.Max(-1,Math.Min(1,sample))*32767));}samples+=count;}
+       if(samples*2>=uint.MaxValue-8192)throw new IOException("WAV limit reached; recording saved");if(samples-lastHeader>=48000){long end=file.Position;file.Position=0;WriteHeader(writer,(uint)(samples*2));file.Position=end;writer.Flush();file.Flush(true);lastHeader=samples;Publish("recording");}Thread.Sleep(10);
        if(samples-lastCheckpoint>=240000){evidence.Event("audio_checkpoint",new{AudioFrames=samples,DurationSeconds=elapsed.Elapsed.TotalSeconds,Input=mic.Statistics(),Output=remote.Statistics()});lastCheckpoint=samples;}
       }}finally{elapsed.Stop();long length=file.Length-44;if(length>uint.MaxValue-36)throw new IOException("WAV too large");file.Position=0;WriteHeader(writer,(uint)length);writer.Flush();}
      }
      if(captureError!=null)throw captureError;
     }finally{cancel.Cancel();Task.WaitAll(one,two);}
    }
-  }catch(Exception e){Error=e.GetBaseException().Message;}finally{Finalizing=true;cancel.Cancel();elapsed.Stop();try{if(observer!=null)observer.GetAwaiter().GetResult();if(evidence!=null){evidence.Event("recording_stop_reason",new{Reason=stopReason,Error=Error});evidence.Finish(FilePath,Error,elapsed.Elapsed.TotalSeconds,new{Input=mic.Statistics(),Output=remote.Statistics()});}}catch(Exception e){Error=(Error==null?"":Error+"; ")+"Registro de integridade incompleto: "+e.GetBaseException().Message;}if(owned)mutex.ReleaseMutex();}
+  }catch(Exception e){Error=e.GetBaseException().Message;}finally{Finalizing=true;cancel.Cancel();elapsed.Stop();if(owned)Publish("saving");try{if(observer!=null)observer.GetAwaiter().GetResult();if(evidence!=null){evidence.Event("recording_stop_reason",new{Reason=stopReason,Error=Error});evidence.Finish(FilePath,Error,elapsed.Elapsed.TotalSeconds,new{Input=mic.Statistics(),Output=remote.Statistics()});}}catch(Exception e){Error=(Error==null?"":Error+"; ")+"Registro de integridade incompleto: "+e.GetBaseException().Message;}if(owned){Publish(String.IsNullOrEmpty(Error)?"stopped":"error");mutex.ReleaseMutex();}}
  }}
  static void WriteHeader(BinaryWriter w,uint bytes){w.Write(Encoding.ASCII.GetBytes("RIFF"));w.Write(bytes+36);w.Write(Encoding.ASCII.GetBytes("WAVEfmt "));w.Write(16);w.Write((short)1);w.Write((short)1);w.Write(48000);w.Write(96000);w.Write((short)2);w.Write((short)16);w.Write(Encoding.ASCII.GetBytes("data"));w.Write(bytes);}
 }

@@ -3,11 +3,12 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Threading;
-[assembly:System.Reflection.AssemblyVersion("1.15.1.44")]
-[assembly:System.Reflection.AssemblyFileVersion("1.15.1.44")]
+[assembly:System.Reflection.AssemblyVersion("1.16.0.47")]
+[assembly:System.Reflection.AssemblyFileVersion("1.16.0.47")]
 static class PhoneDeck {
  [STAThread]static void Main(string[] args){
   EmbeddedDependencies.Load();
+  if(args.Length>0&&args[0]=="--ulanzi-bridge"){UlanziRecorderBridge.Run(args);return;}
   if(args.Length==2&&args[0]=="--verify-recording"){bool valid=EvidenceJournal.VerifyBundle(args[1]);try{File.WriteAllText(Path.Combine(args[1],"verificacao.local.txt"),(valid?"Integridade local conferida.":"Falha de integridade ou pacote incompleto.")+Environment.NewLine+DateTimeOffset.Now.ToString("o")+Environment.NewLine+"Não certifica identidade, relógio externo ou autenticidade da conversa.");}catch{valid=false;}Environment.ExitCode=valid?0:1;return;}
   if(Array.IndexOf(args,"--native-server")>=0){var server=new Thread(()=>NativeHfpBridge.Serve());server.SetApartmentState(ApartmentState.MTA);server.Start();server.Join();return;}
   UiPreferences.Install();

@@ -1,0 +1,15 @@
+using System;
+using System.IO;
+using System.Diagnostics;
+using System.Globalization;
+using System.Web.Script.Serialization;
+public sealed class RecorderState {
+ public string Phase="stopped";public double Seconds;public bool IsRecording {get{return Phase=="recording";}}
+ public string Elapsed {get{return TimeSpan.FromSeconds(Math.Max(0,Seconds)).ToString(Seconds>=3600?@"hh\:mm\:ss":@"mm\:ss");}}
+}
+public static class RecordingStatus {
+ public static string PathFor(string root){return Path.Combine(root,"recording-state.local.json");}
+ public static void Write(string root,string phase,double seconds){try{using(var process=Process.GetCurrentProcess()){var row=new{Phase=phase,Seconds=seconds,Pid=process.Id,ProcessStartedTicks=process.StartTime.ToUniversalTime().Ticks,UpdatedUtc=DateTime.UtcNow.ToString("o")};string path=PathFor(root),temp=path+".tmp";File.WriteAllText(temp,new JavaScriptSerializer().Serialize(row));if(File.Exists(path))File.Replace(temp,path,null);else File.Move(temp,path);}}catch{}}
+ public static RecorderState Read(string root){try{string path=PathFor(root);if(!File.Exists(path))return new RecorderState{Phase=ConversationRecorder.AnyRecording?"unknown":"stopped"};var row=new JavaScriptSerializer().Deserialize<System.Collections.Generic.Dictionary<string,object>>(File.ReadAllText(path));string phase=Convert.ToString(row["Phase"]);if(phase=="stopped"||phase=="error")return new RecorderState{Phase=ConversationRecorder.AnyRecording?"unknown":phase};using(var p=Process.GetProcessById(Convert.ToInt32(row["Pid"]))){if(p.StartTime.ToUniversalTime().Ticks!=Convert.ToInt64(row["ProcessStartedTicks"]))return new RecorderState{Phase="unknown"};}DateTime updated=DateTime.Parse(Convert.ToString(row["UpdatedUtc"]),null,DateTimeStyles.RoundtripKind);if((DateTime.UtcNow-updated).TotalSeconds>5&&phase!="saving")return new RecorderState{Phase="unknown"};return new RecorderState{Phase=phase,Seconds=Convert.ToDouble(row["Seconds"])};}catch{return new RecorderState{Phase="unknown"};}}
+ public static RecorderState Screen(string runtime){try{string path=Path.Combine(runtime,"recorder-status.txt");if(!File.Exists(path))return new RecorderState();string text=File.ReadAllText(path);if(text.StartsWith("PARADO "))return new RecorderState();if(Process.GetProcessesByName("TradeRecorder").Length==0)return new RecorderState{Phase="unknown"};if(text.StartsWith("INICIANDO "))return new RecorderState{Phase="starting"};if(!text.StartsWith("GRAVANDO "))return new RecorderState{Phase="unknown"};DateTime started;if(!DateTime.TryParseExact(Path.GetFileName(text.Substring(9).Trim()),"yyyy-MM-dd_HH-mm-ss",CultureInfo.InvariantCulture,DateTimeStyles.None,out started))return new RecorderState{Phase="unknown"};return new RecorderState{Phase="recording",Seconds=(DateTime.Now-started).TotalSeconds};}catch{return new RecorderState{Phase="unknown"};}}
+}

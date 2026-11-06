@@ -1,4 +1,4 @@
-param([string]$Executable=(Join-Path $PSScriptRoot '..\out\PhoneDeck.exe'))
+﻿param([string]$Executable=(Join-Path $PSScriptRoot '..\out\PhoneDeck.exe'))
 $testOutput=Split-Path (Resolve-Path $Executable).Path -Parent
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing
@@ -19,7 +19,7 @@ try{
  if($button.Text -ne 'Gravar'){throw 'Manual recorder starts in unexpected state'}
  $record=[RecorderUiFixture]::Start($folder);Start-Sleep -Milliseconds 80
  $type.GetField('recorder',$flags).SetValue($form,$record);$type.GetMethod('RefreshState',$flags).Invoke($form,@());[Windows.Forms.Application]::DoEvents()
- if($button.Text -ne 'Parar e salvar' -or $button.GetType().GetField('Fill').GetValue($button).R -ne 232){throw 'Active recording does not show red Stop'}
+ if(-not $button.Text.StartsWith('REC ') -or $button.GetType().GetField('Fill').GetValue($button).R -ne 232){throw 'Active recording does not show red Stop'}
  $bitmap=New-Object Drawing.Bitmap($form.Width,$form.Height)
  try{$form.DrawToBitmap($bitmap,[Drawing.Rectangle]::new(0,0,$form.Width,$form.Height));$bitmap.Save((Join-Path $testOutput 'recording-red-fixture.local.png'))}finally{$bitmap.Dispose()}
  $record.Stop("manual_stop").GetAwaiter().GetResult();$type.GetMethod('Stop').Invoke($form,[object[]]@('manual_stop')).GetAwaiter().GetResult();[Windows.Forms.Application]::DoEvents()
