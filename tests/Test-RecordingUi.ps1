@@ -17,7 +17,7 @@ $type=$a.GetType('RecordingPanel');$form=[RecorderUiFixture]::Panel();$flags=[Re
 try{
  $form.Show();[Windows.Forms.Application]::DoEvents();$button=$form.Controls.Find('ConversationRecordToggle',$true)[0]
  if($button.Text -ne 'Gravar'){throw 'Manual recorder starts in unexpected state'}
- $record=[RecorderUiFixture]::Start($folder);Start-Sleep -Milliseconds 80
+ $record=[RecorderUiFixture]::Start($folder);$readyUntil=[DateTime]::UtcNow.AddSeconds(4);while(-not $record.Started -and $record.Recording -and [DateTime]::UtcNow -lt $readyUntil){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 10};if(-not $record.Started){throw ("Synthetic recorder did not start: "+$record.Error)}
  $type.GetField('recorder',$flags).SetValue($form,$record);$type.GetMethod('RefreshState',$flags).Invoke($form,@());[Windows.Forms.Application]::DoEvents()
  if(-not $button.Text.StartsWith('REC ') -or $button.GetType().GetField('Fill').GetValue($button).R -ne 232){throw 'Active recording does not show red Stop'}
  $bitmap=New-Object Drawing.Bitmap($form.Width,$form.Height)
@@ -26,7 +26,7 @@ try{
  if($button.Text -ne 'Gravar' -or $button.GetType().GetField('Fill').GetValue($button).G -ne 186){throw 'Stopped recorder does not show green Record'}
  $bitmap=New-Object Drawing.Bitmap($form.Width,$form.Height)
  try{$form.DrawToBitmap($bitmap,[Drawing.Rectangle]::new(0,0,$form.Width,$form.Height));$bitmap.Save((Join-Path $testOutput 'recording-green-fixture.local.png'))}finally{$bitmap.Dispose()}
- $record=[RecorderUiFixture]::Start($folder);Start-Sleep -Milliseconds 80;$type.GetField('recorder',$flags).SetValue($form,$record)
+ $record=[RecorderUiFixture]::Start($folder);$readyUntil=[DateTime]::UtcNow.AddSeconds(4);while(-not $record.Started -and $record.Recording -and [DateTime]::UtcNow -lt $readyUntil){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 10};if(-not $record.Started){throw ("Synthetic recorder did not start: "+$record.Error)};$type.GetField('recorder',$flags).SetValue($form,$record)
  [RecorderUiFixture]::Card=$null
  $task=$type.GetMethod('UpdateCallPresence',$flags).Invoke($form,[object[]]@($null));$until=[DateTime]::UtcNow.AddSeconds(8)
  while(-not $task.IsCompleted -and [DateTime]::UtcNow -lt $until){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 10}

@@ -1,0 +1,14 @@
+using System;
+using System.Drawing;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+
+class DeckDialog:Form {
+ bool resizable=true;
+ [DllImport("user32.dll")]static extern bool ReleaseCapture();
+ [DllImport("user32.dll")]static extern IntPtr SendMessage(IntPtr h,int m,IntPtr w,IntPtr l);
+ public void UseDeckTitleBar(string caption,bool canResize=true){resizable=canResize;FormBorderStyle=FormBorderStyle.None;var previous=new Control[Controls.Count];Controls.CopyTo(previous,0);Controls.Clear();var content=new Panel{Dock=DockStyle.Fill,BackColor=DeckTheme.Bg,Margin=new Padding(0)};foreach(var item in previous)content.Controls.Add(item);var bar=new Panel{Name="DeckDialogTitleBar",Dock=DockStyle.Top,Height=34,BackColor=DeckTheme.Surface};var title=DeckTheme.Label(caption,9,DeckTheme.Dim,true);title.Dock=DockStyle.Fill;title.Padding=new Padding(12,0,0,0);title.TextAlign=ContentAlignment.MiddleLeft;bar.Controls.Add(title);var close=new DeckIconButton{IconName="close",AccessibleName="Fechar",Dock=DockStyle.Right,Width=36};bar.Controls.Add(close);close.Click+=(s,e)=>Close();if(canResize){var maximize=new DeckButton{Text="□",Ghost=true,Dock=DockStyle.Right,Width=34,AccessibleName="Maximizar"};bar.Controls.Add(maximize);maximize.Click+=(s,e)=>ToggleMaximize();var minimize=new DeckButton{Text="−",Ghost=true,Dock=DockStyle.Right,Width=34,AccessibleName="Minimizar"};bar.Controls.Add(minimize);minimize.Click+=(s,e)=>WindowState=FormWindowState.Minimized;bar.Controls.SetChildIndex(minimize,1);bar.Controls.SetChildIndex(maximize,2);bar.Controls.SetChildIndex(close,3);title.DoubleClick+=(s,e)=>ToggleMaximize();}else ClientSize=new Size(ClientSize.Width,ClientSize.Height+34);MouseEventHandler drag=(s,e)=>{if(e.Button==MouseButtons.Left){ReleaseCapture();SendMessage(Handle,0xA1,(IntPtr)2,IntPtr.Zero);}};bar.MouseDown+=drag;title.MouseDown+=drag;Controls.Add(bar);Controls.Add(content);content.BringToFront();Padding=new Padding(1);}
+ void ToggleMaximize(){MaximizedBounds=Screen.FromControl(this).WorkingArea;WindowState=WindowState==FormWindowState.Maximized?FormWindowState.Normal:FormWindowState.Maximized;}
+ protected override CreateParams CreateParams {get{var p=base.CreateParams;p.Style &= ~0x00C00000;if(resizable)p.Style|=0x00040000|0x00010000|0x00020000;p.ExStyle &= ~0x00000200;return p;}}
+ protected override void WndProc(ref Message m){if(m.Msg==0x83||m.Msg==0x85){m.Result=IntPtr.Zero;return;}if(m.Msg==0x86){m.Result=(IntPtr)1;return;}if(m.Msg==0x84&&resizable&&WindowState!=FormWindowState.Maximized){base.WndProc(ref m);if(m.Result==(IntPtr)1){int x=(short)(m.LParam.ToInt64()&65535),y=(short)((m.LParam.ToInt64()>>16)&65535);var p=PointToClient(new Point(x,y));bool l=p.X<6,r=p.X>ClientSize.Width-7,t=p.Y<6,b=p.Y>ClientSize.Height-7;m.Result=(IntPtr)(t?(l?13:r?14:12):b?(l?16:r?17:15):l?10:r?11:1);}return;}base.WndProc(ref m);}
+}

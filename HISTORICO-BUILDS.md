@@ -36,3 +36,10 @@ Na 1.10.1.29, o prazo de cada solicitação também é validado antes das instru
 - 1.16.0.45: compilação falhou; não instalado.
 - 1.16.0.46: candidato verificado, não promovido; revisão do protocolo limitou ações ao evento de clique confirmado antes da entrega.
 - 1.16.0.47: instalado nos dois aliases; estado real de captura com atualização periódica, REC/cronômetro no painel e cabeçalho, estados iniciando/salvando/erro. Plugin Ulanzi Recording 1.0.0 instalado na tecla existente de gravação de telas; demais teclas conferidas e preservadas. TradeRecorder e componente nativo 0.4.0.55 inalterados. Testes sintéticos de captura/estado/PNG e servidor WebSocket local passaram; conexão real Ulanzi confirmou um contexto. Nenhuma gravação real iniciada para teste; voz remota continua sem validação.
+
+- 1.16.1.48–50: candidatos não promovidos; verificações identificaram ciclo de redesenho e ajustes necessários de roda do mouse/estado vazio. Reservas e falhas preservadas.
+- 1.16.1.51: instalado nos dois aliases; histórico com barra fina integrada ao tema, sem caixa/setas nativas brancas. Testes de roda, arrasto até a última linha, teclado, temas e lista vazia passaram; imagens sintéticas revisadas. Ponte Ulanzi isolada por porta para permitir teste local sem competir com a instância instalada. Componente nativo e configurações de áudio inalterados.
+
+- 1.16.2.52: compilação falhou por escopo no lançador de configurações; não instalado.
+- 1.16.2.53: candidato testado, não promovido antes de remover a última moldura clara das barras na revisão visual.
+- 1.16.2.54: instalado; acabamento fino nas barras de logs, contatos, gravações, configurações e seletores. Quadrado branco no cabeçalho removido. Registro e cadastro de contato usam cabeçalho compacto próprio. Testes de rolagem, cantos, claro/escuro e moldura passaram; fixture de gravação passou a aguardar prontidão real em vez de um intervalo fixo. Capturas sintéticas revisadas. Sem alteração de áudio, chamadas ou gravações reais.
