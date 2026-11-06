@@ -82,6 +82,11 @@ static class NativePackageActivation {
 sealed class SystemHfpSession:IDisposable {
  readonly SystemHfp phone=new SystemHfp();
  public Dictionary<string,object> Handle(string action,string number,DateTime deadline){
+  if(action=="observe"){
+   if(DateTime.UtcNow>=deadline)throw new TimeoutException("Prazo de observação expirou.");
+   if(!phone.IsPhysicallyConnected)return new Dictionary<string,object>{{"Ok",true},{"Connected",false},{"CallCount",null},{"StatusObserved",false},{"Message","Sem conexão; nenhuma reconexão iniciada pela observação."}};
+   return new Dictionary<string,object>{{"Ok",true},{"Connected",true},{"CallCount",phone.CallCount()},{"Call",phone.Active?1:0},{"Setup",phone.Incoming?1:0},{"Held",0},{"StatusObserved",true},{"NetworkIdentityVerified",false}};
+  }
   if((action=="mic-on"||action=="mic-off")&&!phone.IsPhysicallyConnected)throw new InvalidOperationException("Sem conexão nativa para sincronizar o mudo da chamada.");
   if(action=="stop"){
    if(DateTime.UtcNow>=deadline)throw new TimeoutException("Solicitação expirada.");

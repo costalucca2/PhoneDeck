@@ -1,4 +1,4 @@
-﻿param([string]$Executable=(Join-Path $PSScriptRoot '..\out\PhoneDeck.exe'))
+param([string]$Executable=(Join-Path $PSScriptRoot '..\out\PhoneDeck.exe'))
 $testOutput=Split-Path (Resolve-Path $Executable).Path -Parent
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing
@@ -22,9 +22,9 @@ try{
  if($button.Text -ne 'Parar e salvar' -or $button.GetType().GetField('Fill').GetValue($button).R -ne 232){throw 'Active recording does not show red Stop'}
  $bitmap=New-Object Drawing.Bitmap($form.Width,$form.Height)
  try{$form.DrawToBitmap($bitmap,[Drawing.Rectangle]::new(0,0,$form.Width,$form.Height));$bitmap.Save((Join-Path $testOutput 'recording-red-fixture.local.png'))}finally{$bitmap.Dispose()}
- $record.Stop().GetAwaiter().GetResult();$type.GetMethod('Stop').Invoke($form,@()).GetAwaiter().GetResult();[Windows.Forms.Application]::DoEvents()
+ $record.Stop("manual_stop").GetAwaiter().GetResult();$type.GetMethod('Stop').Invoke($form,[object[]]@('manual_stop')).GetAwaiter().GetResult();[Windows.Forms.Application]::DoEvents()
  if($button.Text -ne 'Gravar' -or $button.GetType().GetField('Fill').GetValue($button).G -ne 186){throw 'Stopped recorder does not show green Record'}
  $bitmap=New-Object Drawing.Bitmap($form.Width,$form.Height)
  try{$form.DrawToBitmap($bitmap,[Drawing.Rectangle]::new(0,0,$form.Width,$form.Height));$bitmap.Save((Join-Path $testOutput 'recording-green-fixture.local.png'))}finally{$bitmap.Dispose()}
  'PASS: manual green Record, red Stop/save, timer and successful return to green. Synthetic samples only; no microphone/call captured.'
-}finally{if($record -and $record.Recording){$record.Stop().GetAwaiter().GetResult()};$form.Close();$form.Dispose();if(Test-Path $folder){$resolved=[IO.Path]::GetFullPath($folder);if((Split-Path $resolved -Parent).TrimEnd('\') -eq ([IO.Path]::GetTempPath()).TrimEnd('\') -and (Split-Path $resolved -Leaf) -like 'phonedeck-ui-recording-*'){Remove-Item -LiteralPath $resolved -Recurse -Force}}}
+}finally{if($record -and $record.Recording){$record.Stop("manual_stop").GetAwaiter().GetResult()};$form.Close();$form.Dispose();if(Test-Path $folder){$resolved=[IO.Path]::GetFullPath($folder);if((Split-Path $resolved -Parent).TrimEnd('\') -eq ([IO.Path]::GetTempPath()).TrimEnd('\') -and (Split-Path $resolved -Leaf) -like 'phonedeck-ui-recording-*'){Remove-Item -LiteralPath $resolved -Recurse -Force}}}
