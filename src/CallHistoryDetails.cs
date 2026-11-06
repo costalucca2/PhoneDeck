@@ -5,7 +5,7 @@ using System.Media;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-sealed class CallHistoryDetails:Form {
+sealed class CallHistoryDetails:DeckDialog {
  readonly CallHistoryRow row;readonly string root;readonly ListBox recordings=new ListBox();readonly TextBox log=new TextBox();readonly Label hint=DeckTheme.Label("",10,DeckTheme.Dim);readonly DeckButton play=new DeckButton(),stop=new DeckButton(),folder=new DeckButton();SoundPlayer player;string commandLog="";bool loaded;
  public CallHistoryDetails(CallHistoryRow entry,string storage){
   row=entry;root=storage;Text=UiPreferences.T("PhoneDeck · Registro da chamada","PhoneDeck · Call record");Name="CallHistoryDetails";ClientSize=new Size(900,700);MinimumSize=new Size(720,580);StartPosition=FormStartPosition.CenterParent;BackColor=DeckTheme.Bg;ForeColor=DeckTheme.Text;Font=new Font("Segoe UI",10);
@@ -18,7 +18,7 @@ sealed class CallHistoryDetails:Form {
   play.Click+=(s,e)=>Play();stop.Click+=(s,e)=>StopAudio();folder.Click+=(s,e)=>{try{var selected=recordings.SelectedItem as CallRecordingInfo;System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(selected==null?Path.GetDirectoryName(row.Journal):selected.Folder){UseShellExecute=true});}catch(Exception ex){hint.Text=ex.Message;}};
   log.Name="CallEvidenceLog";log.Multiline=true;log.ReadOnly=true;log.ScrollBars=ScrollBars.Both;log.WordWrap=false;log.Dock=DockStyle.Fill;log.BackColor=DeckTheme.Surface;log.ForeColor=DeckTheme.Text;log.BorderStyle=BorderStyle.None;log.Font=new Font("Consolas",10);layout.Controls.Add(log,0,4);
   var note=DeckTheme.Label(UiPreferences.T("Associação pelo registro local; identidade e horário externo não certificados.","Associated by local record; identity and external time are not certified."),8,DeckTheme.Dim);note.Dock=DockStyle.Fill;layout.Controls.Add(note,0,5);
-  play.Enabled=false;stop.Enabled=false;folder.Enabled=false;Shown+=async(s,e)=>await LoadRecords();FormClosed+=(s,e)=>StopAudio();UiPreferences.Apply(this);
+  play.Enabled=false;stop.Enabled=false;folder.Enabled=false;Shown+=async(s,e)=>await LoadRecords();FormClosed+=(s,e)=>StopAudio();UseDeckTitleBar(Text);UiPreferences.Apply(this);
  }
  static void Setup(DeckButton button,string text,Color color){button.Text=text;button.Fill=color;button.Size=new Size(155,34);button.Margin=new Padding(0,3,8,0);}
  public async Task LoadRecords(){if(loaded)return;loaded=true;try{var data=await Task.Run(()=>{commandLog=CallRecordingLookup.ReadLog(row.Journal);return CallRecordingLookup.Find(root,row);});if(IsDisposed)return;foreach(var item in data)recordings.Items.Add(item);folder.Enabled=File.Exists(row.Journal);if(data.Count>0)recordings.SelectedIndex=0;else{hint.Text=UiPreferences.T("Sem gravação associada. Log da chamada disponível abaixo.","No associated recording. Call log is available below.");log.Text=commandLog;}}catch(Exception e){if(!IsDisposed)hint.Text=e.Message;}}

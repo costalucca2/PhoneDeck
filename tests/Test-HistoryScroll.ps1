@@ -28,7 +28,7 @@ try{
  Assert ($view.TopItem.Index -gt 80 -and $view.Items[99].Bounds.Bottom -le $view.ClientSize.Height) 'Dragging cannot reach the last record'
  $bar.GetType().GetMethod('OnKeyDown',$flags).Invoke($bar,[object[]]@([Windows.Forms.KeyEventArgs]::new('Home')))|Out-Null
  Assert ($view.TopItem.Index -eq 0) 'Keyboard Home failed'
- foreach($light in $false,$true){$a.GetType('UiPreferences').GetMethod('Set').Invoke($null,[object[]]@($light,$false,$false))|Out-Null;[Windows.Forms.Application]::DoEvents();$bitmap=[Drawing.Bitmap]::new($view.Width,$view.Height);try{$view.DrawToBitmap($bitmap,$view.ClientRectangle);$name=if($light){'light'}else{'dark'};$bitmap.Save((Join-Path (Split-Path (Resolve-Path $Executable).Path) ('history-scroll-'+$name+'.local.png')))}finally{$bitmap.Dispose()}}
+ foreach($light in $false,$true){$a.GetType('UiPreferences').GetMethod('Set').Invoke($null,[object[]]@($light,$false,$false))|Out-Null;[Windows.Forms.Application]::DoEvents();$bitmap=[Drawing.Bitmap]::new($view.Width,$view.Height);try{$view.DrawToBitmap($bitmap,$view.ClientRectangle);if(-not $light){Assert ($bitmap.GetPixel($bitmap.Width-3,5).R -lt 150) "White header filler remains"};$name=if($light){'light'}else{'dark'};$bitmap.Save((Join-Path (Split-Path (Resolve-Path $Executable).Path) ('history-scroll-'+$name+'.local.png')))}finally{$bitmap.Dispose()}}
  $view.Items.Clear();[Windows.Forms.Application]::DoEvents();Assert (-not $bar.Visible) 'Empty history retained a scrollbar'
  'PASS: slim themed scrollbar; native arrows removed; wheel, drag to final row, keyboard and empty state; dark/light images. Synthetic rows only.'
 }finally{$form.Dispose()}

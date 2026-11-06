@@ -19,9 +19,11 @@ try{
  $a=[Reflection.Assembly]::LoadFrom((Resolve-Path $Executable).Path);$type=$a.GetType('CallHistoryDetails');$flags=[Reflection.BindingFlags]'NonPublic,Instance'
  $form=$type.GetConstructors()[0].Invoke([object[]]@($row.PSObject.BaseObject,[string]$folder))
  try{
+  Assert ($form.FormBorderStyle -eq 'None' -and $form.Controls.Find('DeckDialogTitleBar',$true)[0].Height -le 36) 'Native white titlebar remains'
   $task=$type.GetMethod('LoadRecords').Invoke($form,@());$until=[DateTime]::UtcNow.AddSeconds(8);while(-not $task.IsCompleted -and [DateTime]::UtcNow -lt $until){[Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 10};Assert ($task.IsCompleted) 'Detail load timed out';$task.GetAwaiter().GetResult()
   $list=$type.GetField('recordings',$flags).GetValue($form);$log=$type.GetField('log',$flags).GetValue($form)
   Assert ($list.Items.Count -eq 2 -and $log.Text.Contains('0211100000000') -and $log.Text.Contains('Solicitado em:')) 'Details missing log, exact number or recording time'
+  $form.Show();[Windows.Forms.Application]::DoEvents();$form.PerformLayout();$bitmap=[Drawing.Bitmap]::new($form.Width,$form.Height);try{$form.DrawToBitmap($bitmap,[Drawing.Rectangle]::new(0,0,$form.Width,$form.Height));$bitmap.Save((Join-Path (Split-Path (Resolve-Path $Executable).Path) 'call-details-themed.local.png'))}finally{$bitmap.Dispose()}
  }finally{$form.Dispose()}
  [IO.File]::AppendAllText((Join-Path $found[0].Folder 'conversa.wav'),'tampered');Assert (-not ([CallRecordingLookup]::Find($folder,$row))[0].Integrity) 'Changed recording accepted'
  $empty=$type.GetConstructors()[0].Invoke([object[]]@($unknown.PSObject.BaseObject,[string]$folder))

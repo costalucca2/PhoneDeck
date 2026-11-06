@@ -39,3 +39,7 @@ Na 1.10.1.29, o prazo de cada solicitação também é validado antes das instru
 
 - 1.16.1.48–50: candidatos não promovidos; verificações identificaram ciclo de redesenho e ajustes necessários de roda do mouse/estado vazio. Reservas e falhas preservadas.
 - 1.16.1.51: instalado nos dois aliases; histórico com barra fina integrada ao tema, sem caixa/setas nativas brancas. Testes de roda, arrasto até a última linha, teclado, temas e lista vazia passaram; imagens sintéticas revisadas. Ponte Ulanzi isolada por porta para permitir teste local sem competir com a instância instalada. Componente nativo e configurações de áudio inalterados.
+
+- 1.16.2.52: compilação falhou por escopo no lançador de configurações; não instalado.
+- 1.16.2.53: candidato testado, não promovido antes de remover a última moldura clara das barras na revisão visual.
+- 1.16.2.54: instalado; acabamento fino nas barras de logs, contatos, gravações, configurações e seletores. Quadrado branco no cabeçalho removido. Registro e cadastro de contato usam cabeçalho compacto próprio. Testes de rolagem, cantos, claro/escuro e moldura passaram; fixture de gravação passou a aguardar prontidão real em vez de um intervalo fixo. Capturas sintéticas revisadas. Sem alteração de áudio, chamadas ou gravações reais.
