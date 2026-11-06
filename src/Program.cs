@@ -1,13 +1,14 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Threading;
-[assembly:System.Reflection.AssemblyVersion("1.13.4.40")]
-[assembly:System.Reflection.AssemblyFileVersion("1.13.4.40")]
+[assembly:System.Reflection.AssemblyVersion("1.14.0.41")]
+[assembly:System.Reflection.AssemblyFileVersion("1.14.0.41")]
 static class PhoneDeck {
  [STAThread]static void Main(string[] args){
   EmbeddedDependencies.Load();
+  if(args.Length==2&&args[0]=="--verify-recording"){bool valid=EvidenceJournal.VerifyBundle(args[1]);try{File.WriteAllText(Path.Combine(args[1],"verificacao.local.txt"),(valid?"Integridade local conferida.":"Falha de integridade ou pacote incompleto.")+Environment.NewLine+DateTimeOffset.Now.ToString("o")+Environment.NewLine+"Não certifica identidade, relógio externo ou autenticidade da conversa.");}catch{valid=false;}Environment.ExitCode=valid?0:1;return;}
   if(Array.IndexOf(args,"--native-server")>=0){var server=new Thread(()=>NativeHfpBridge.Serve());server.SetApartmentState(ApartmentState.MTA);server.Start();server.Join();return;}
   UiPreferences.Install();
   PhoneDirectDial.Initialize();
@@ -27,8 +28,8 @@ static class PhoneDeck {
   if(Array.IndexOf(args,"--discord-microfone")>=0){DiscordMic.Toggle();return;}
   if(AudioActions.Handle(args))return;
   if(Array.IndexOf(args,"--answer-check")>=0){var state=NativeHfpBridge.Request("status");bool incoming=Convert.ToInt32(state["Setup"])==1&&Convert.ToInt32(state["Call"])==0&&Convert.ToInt32(state["Held"])==0;File.WriteAllText(Path.Combine(root,"answer-status.local.txt"),incoming?"Single incoming call available; no action sent.":"No single incoming call; no action sent.");return;}
-  if(Array.IndexOf(args,"--atender")>=0){NativeHfpBridge.Request("answer");return;}
-  if(Array.IndexOf(args,"--desligar")>=0){NativeHfpBridge.Request("hangup");return;}
+  if(Array.IndexOf(args,"--atender")>=0){CallAudit.Execute("answer");return;}
+  if(Array.IndexOf(args,"--desligar")>=0){CallAudit.Execute("hangup");return;}
   int index=Array.IndexOf(args,"--contato");string id=index>=0&&index+1<args.Length?args[index+1]:null;
   if(index>=0&&(id==null||!Regex.IsMatch(id,@"^[a-z]{2,24}$")))throw new Exception("Contato inválido.");
   int ni=Array.IndexOf(args,"--number");string direct=ni>=0&&ni+1<args.Length?args[ni+1]:null;
@@ -36,6 +37,6 @@ static class PhoneDeck {
   string number=direct??File.ReadAllText(Path.Combine(root,"telefones",id+".txt")).Trim();
   if(!Regex.IsMatch(number,@"\A(?:\+[1-9][0-9]{7,14}|[0-9]{8,14})\z"))throw new Exception("Número de telefone inválido.");
   if(Array.IndexOf(args,"--check")>=0||Array.IndexOf(args,"--inspect")>=0){var state=NativeHfpBridge.Request("status");File.WriteAllText(Path.Combine(root,"native-check.local.txt"),Convert.ToString(state["Message"])+" Nenhuma chamada executada.");return;}
-  NativeHfpBridge.Request("dial",number);
+  CallAudit.Execute("dial",number,id);
  }catch(Exception ex){AudioActions.Notice(ex.GetBaseException().Message);Environment.ExitCode=1;}finally{if(PhoneDeckPresentation.Needed(args)){try{PhoneDeckPresentation.Restore(args,false);}catch{}}}}
 }

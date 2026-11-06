@@ -35,3 +35,15 @@ Uma trava impede dois gravadores simultâneos. Fechar o painel durante a gravaç
 Os testes usam sinais sintéticos para verificar mistura das duas fontes, WAV, salvamento, estados verde/vermelho, temporizador, exclusão mútua e falhas. Preferências e campos foram conferidos em claro/escuro e PT/EN. No ambiente local, os dois streams reais foram inicializados e imediatamente parados antes de ler amostras, sem arquivo de áudio nem chamada.
 
 Acesso HFP, rota local e sincronização de mudo foram aceitos pelo Windows. Isso não comprova conversa bidirecional nem gravação do interlocutor em chamada real. Não foram realizadas chamadas de teste. O painel “Cha” corresponde ao título cortado “Chamada” do componente CallingShellApp do Windows, identificado pelos recursos locais; não é o nome do PhoneDeck.
+
+## Registro associado à gravação
+
+Cada nova gravação cria sua própria pasta em Desktop/Gravacoes/PhoneDeck, com conversa.wav original, eventos.jsonl, resumo.txt, manifesto.json e manifesto.sha256. Se existe contexto recente de uma chamada comandada no PhoneDeck, inclui também uma cópia chamada.jsonl. Gravações anteriores não são alteradas ou preenchidas retrospectivamente.
+
+O registro contém início/fim com UTC, horário local e fuso, duração monotônica, versão, entrada/saída, mudo e nível no início, falhas de captura e estados HFP observados a cada cinco segundos quando mudam. Os contadores de amostras e preenchimento com silêncio não medem perdas da rede. O áudio inclui o microfone e tudo que tocar na saída selecionada, sem isolar o interlocutor.
+
+Nos comandos do PhoneDeck/Ulanzi, o log distingue solicitação, confirmação do comando e observação de estado. Guarda o nome local e o número solicitado com seus zeros/prefixos, não uma identidade confirmada pela operadora. A associação da gravação usa contexto local recente e uma única chamada observada; não existe identificador de chamada da rede. Sem essa associação, os dados ficam desconhecidos. Chamadas recebidas não têm número remoto validado. O log de comandos em chamadas/<id>/eventos.jsonl pode continuar após o encerramento da gravação; a cópia do pacote corresponde ao momento do salvamento.
+
+Os eventos formam uma cadeia SHA-256; o manifesto vincula áudio, eventos e resumo. Para conferir sem telefone: PhoneDeck.exe --verify-recording "PASTA_DA_GRAVACAO". O processo retorna 0 se os arquivos correspondem e 1 se há inconsistência ou pacote incompleto; salva verificacao.local.txt. Um pacote parcial pode ter integridade válida, mas o manifesto e o resumo indicam a falha. Falha de energia antes do salvamento final pode deixar WAV/logs recuperáveis e pacote incompleto.
+
+Preserve a pasta inteira e uma cópia independente do manifesto.sha256. Os hashes detectam alterações em relação à cópia preservada; quem pode reescrever todos os arquivos pode recalculá-los. O relógio é o do Windows, sem carimbo de tempo externo certificado. O pacote não certifica autenticidade, identidade, causa de falha de plataforma ou aceitação jurídica. Não há upload, gravação automática ou mudança de plataformas financeiras.
