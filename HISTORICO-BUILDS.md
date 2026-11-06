@@ -43,3 +43,6 @@ Na 1.10.1.29, o prazo de cada solicitação também é validado antes das instru
 - 1.16.2.52: compilação falhou por escopo no lançador de configurações; não instalado.
 - 1.16.2.53: candidato testado, não promovido antes de remover a última moldura clara das barras na revisão visual.
 - 1.16.2.54: instalado; acabamento fino nas barras de logs, contatos, gravações, configurações e seletores. Quadrado branco no cabeçalho removido. Registro e cadastro de contato usam cabeçalho compacto próprio. Testes de rolagem, cantos, claro/escuro e moldura passaram; fixture de gravação passou a aguardar prontidão real em vez de um intervalo fixo. Capturas sintéticas revisadas. Sem alteração de áudio, chamadas ou gravações reais.
+
+- 1.16.3.55–60: candidatos não promovidos; reservas preservadas durante revisão do recorte nativo, layout e interação das listas suspensas.
+- 1.16.3.61: instalado nos dois aliases, hash conferido. Barras nativas recortadas antes da pintura; controles finos próprios em listas, logs, configurações e listas suspensas. Histórico impede reaparecimento dos estilos nativos. Roda, arrasto, teclado, temas e recorte verificados; 15 testes passaram no artefato entregue. Ulanzi reconectada; backend de áudio inalterado, nenhuma chamada real de teste.
