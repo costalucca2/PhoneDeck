@@ -1,7 +1,7 @@
 ﻿param(
  [Parameter(Mandatory=$true)][string]$SdkTools,
  [Parameter(Mandatory=$true)][string]$CertificateThumbprint,
- [string]$PackageVersion='0.3.1.53'
+ [string]$PackageVersion='0.3.1.54'
 )
 # Run in Windows PowerShell 5.1. Uses an existing trusted PhoneDeck signing identity.
 $ErrorActionPreference='Stop'

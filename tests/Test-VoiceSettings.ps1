@@ -20,6 +20,10 @@ try{
  $iconGraphics=[Drawing.Graphics]::FromImage($iconBitmap)
  try{foreach($icon in 'sun','moon','settings','record','stop','close'){$a.GetType('VectorIcons').GetMethod('Draw').Invoke($null,[object[]]@($iconGraphics,$icon,[Drawing.Rectangle]::new(2,2,32,32),[Drawing.Color]::Navy))}}finally{$iconGraphics.Dispose();$iconBitmap.Dispose()}
  if($input.Width -lt 450 -or $output.Width -lt 450){throw "Voice controls collapsed instead of filling the content area"}
+ $body=$a.GetType('AudioSettingsForm').GetField('body',[Reflection.BindingFlags]'NonPublic,Instance').GetValue($form)
+ $rows=@($body.Controls|Sort-Object Top)
+ for($i=1;$i -lt $rows.Count;$i++){if($rows[$i].Top -lt $rows[$i-1].Bottom){throw 'Voice settings rows overlap'}}
+ if($body.HorizontalScroll.Visible){throw 'Unexpected horizontal scrolling in voice settings'}
  $bitmap=New-Object Drawing.Bitmap($form.Width,$form.Height)
  try {
   $form.DrawToBitmap($bitmap,[Drawing.Rectangle]::new(0,0,$form.Width,$form.Height))
