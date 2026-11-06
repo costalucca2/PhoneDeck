@@ -17,7 +17,7 @@ static class PhoneDeckPresentation {
  public static bool Needed(string[] args){return !args.Contains("--check")&&!args.Contains("--inspect")&&!args.Contains("--answer-check")&&(args.Contains("--contato")||args.Contains("--number")||args.Contains("--atender")||args.Contains("--desligar")||args.Contains("--microfone")||args.Contains("--microfone-on")||args.Contains("--microfone-off"));}
  public static void Restore(string[] args,bool minimizeBridge){
   var root=AppDomain.CurrentDomain.BaseDirectory;int i=Array.IndexOf(args,"--contato");string id=i>=0&&i+1<args.Length?args[i+1]:"";
-  File.WriteAllText(Path.Combine(root,"presentation.local.json"),new JavaScriptSerializer().Serialize(new Dictionary<string,object>{{"Contact",id},{"Updated",DateTime.UtcNow.ToString("o")},{"Success",Environment.ExitCode==0}}));
+  File.WriteAllText(Path.Combine(root,"presentation.local.json"),new JavaScriptSerializer().Serialize(new Dictionary<string,object>{{"Contact",id},{"Updated",DateTime.UtcNow.ToString("o")},{"Success",Environment.ExitCode==0},{"ShowRecorder",args.Contains("--contato")||args.Contains("--number")||args.Contains("--atender")}}));
   var file=Path.Combine(root,"PhoneDeck.exe");if(!File.Exists(file))file=System.Windows.Forms.Application.ExecutablePath;
   bool launched=false;var deadline=DateTime.UtcNow.AddSeconds(5);
   while(DateTime.UtcNow<deadline){foreach(var p in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(file))){try{if(p.Id==Process.GetCurrentProcess().Id||p.MainWindowHandle==IntPtr.Zero||p.MainWindowTitle!="PhoneDeck"||!String.Equals(p.MainModule.FileName,file,StringComparison.OrdinalIgnoreCase))continue;ShowWindowAsync(p.MainWindowHandle,9);SetForegroundWindow(p.MainWindowHandle);return;}catch{}}

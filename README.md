@@ -1,10 +1,14 @@
 # PhoneDeck
 
-**Prévia experimental 1.11.0.32 — backend nativo de voz integrado; conversa real ainda não validada.**
+**Prévia experimental 1.13.3.39 — voz configurável e gravação manual; conversa real ainda não validada.**
 
 Janela de contatos e controle Bluetooth HFP direto, com os mesmos comandos em Ulanzi, Stream Deck ou teclado macro. O caminho de chamadas não abre nem automatiza o Vincular ao Celular. Android ainda não foi validado em aparelho real. [Instalação e atalhos](docs/INSTALACAO.md).
 
 **Experimental: controle e áudio são camadas diferentes.** Os três comandos foram validados com telefone simulado no binário entregue. Não foi feita chamada real. O backend usa o serviço HFP nativo com identidade própria MSIX. A conexão e a preparação da rota de voz foram aceitas em Windows 10 22H2, sem Phone Link e com zero chamadas. Isso ainda não comprova voz de ponta a ponta. A interface interna pode variar entre versões do Windows.
+
+## Voz, tema e gravação
+
+Configurações → Voz e Áudio: dispositivos, nível, mudo sincronizado, teste de sinal e redução de ruído opcional com RTX Voice. Sol/lua e PT/EN persistem entre aberturas. O minipainel usa verde para gravar e vermelho para parar/salvar microfone + saída em WAV local. Nenhuma gravação começa automaticamente. [Funcionamento e limites](docs/VOZ-E-GRAVACAO.md).
 
 ## Uso
 
@@ -22,6 +26,8 @@ PhoneDeck.exe --snapshot
 PhoneDeck.exe --check --contato mesa
 PhoneDeck.exe --inspect --contato mesa
 PhoneDeck.exe --answer-check
+PhoneDeck.exe --audio-settings
+PhoneDeck.exe --record-panel
 PhoneDeck.exe --native-audio-setup
 PhoneDeck.exe --native-stop
 ```

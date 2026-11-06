@@ -1,7 +1,7 @@
-param(
+﻿param(
  [Parameter(Mandatory=$true)][string]$SdkTools,
  [Parameter(Mandatory=$true)][string]$CertificateThumbprint,
- [string]$PackageVersion='0.2.0.46'
+ [string]$PackageVersion='0.3.1.53'
 )
 # Run in Windows PowerShell 5.1. Uses an existing trusted PhoneDeck signing identity.
 $ErrorActionPreference='Stop'
@@ -39,7 +39,7 @@ try {
  <Resources><Resource Language="pt-br" /></Resources>
  <Dependencies><TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.19045.0" /></Dependencies>
  <Applications><Application Id="NativeProbe" Executable="NativeProbe.exe" EntryPoint="Windows.FullTrustApplication"><uap:VisualElements DisplayName="PhoneDeck Bluetooth" Description="Controle e preparacao de voz Bluetooth" BackgroundColor="transparent" Square150x150Logo="PhoneDeck.png" Square44x44Logo="PhoneDeck.png" /></Application></Applications>
- <Capabilities><uap:Capability Name="phoneCall" /><rescap:Capability Name="runFullTrust" /><rescap:Capability Name="phoneLineTransportManagement" /><DeviceCapability Name="bluetooth" /></Capabilities>
+ <Capabilities><uap:Capability Name="phoneCall" /><rescap:Capability Name="runFullTrust" /><rescap:Capability Name="phoneLineTransportManagement" /><DeviceCapability Name="bluetooth" /><DeviceCapability Name="microphone" /></Capabilities>
 </Package>
 "@
  [IO.File]::WriteAllText((Join-Path $stage 'AppxManifest.xml'),$manifest,[Text.UTF8Encoding]::new($false))

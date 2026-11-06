@@ -24,7 +24,16 @@ static class AudioActions {
    bool actual;Marshal.ThrowExceptionForHR(v.GetMute(out actual));if(toggle&&!desired.HasValue)desired=!actual;
    if(desired.HasValue){Guid context=Guid.Empty;Marshal.ThrowExceptionForHR(v.SetMute(desired.Value,ref context));Marshal.ThrowExceptionForHR(v.GetMute(out actual));}
    results.Add(actual?"silenciado":"ligado");
-  }finally{Free(volume);Free(d);}}return "Microfone: "+String.Join(" / ",results.ToArray());}finally{Free(ds);}
+  }finally{Free(volume);Free(d);}}string message="Microfone: "+String.Join(" / ",results.ToArray());if(desired.HasValue){try{NativeHfpBridge.RequestIfRunning(AudioConfiguration.InputMuted()?"mic-off":"mic-on");}catch(Exception e){message+=". Mudo da chamada sem confirmação: "+e.GetBaseException().Message;}}return message;}finally{Free(ds);}
+ }
+ public static void SetCommunicationDevices(string output,string input){
+  if(!AudioConfiguration.Devices(0).Exists(d=>d.Id==output)||!AudioConfiguration.Devices(1).Exists(d=>d.Id==input))throw new InvalidOperationException("Escolha dispositivos ativos.");
+  IDevices ds=null;IPolicy policy=null;string oldOutput=null,oldInput=null;
+  try{ds=(IDevices)new Enumerator();oldOutput=Endpoint(ds,0,2);oldInput=Endpoint(ds,1,2);policy=(IPolicy)new PolicyClient();
+   File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"audio-previous.local.txt"),"output="+oldOutput+Environment.NewLine+"input="+oldInput);
+   try{Marshal.ThrowExceptionForHR(policy.SetDefaultEndpoint(output,2));Marshal.ThrowExceptionForHR(policy.SetDefaultEndpoint(input,2));if(Endpoint(ds,0,2)!=output||Endpoint(ds,1,2)!=input)throw new InvalidOperationException("Dispositivos de comunicação não confirmados.");}
+   catch{policy.SetDefaultEndpoint(oldOutput,2);policy.SetDefaultEndpoint(oldInput,2);throw;}
+  }finally{Free(policy);Free(ds);}
  }
  public static void Configure(){
   IDevices ds=null;IPolicy policy=null;
@@ -39,7 +48,7 @@ static class AudioActions {
  public static bool Handle(string[] args){
   if(Array.IndexOf(args,"--audio-status")>=0){File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"audio-status.local.txt"),Microphone(null,false));return true;}
   if(Array.IndexOf(args,"--audio-configure")>=0){Configure();return true;}
-  if(Array.IndexOf(args,"--audio-settings")>=0){Process.Start(new ProcessStartInfo("ms-settings:sound"){UseShellExecute=true});return true;}
+  if(Array.IndexOf(args,"--audio-settings")>=0){Application.EnableVisualStyles();Application.Run(new AudioSettingsForm());return true;}
   bool toggle=Array.IndexOf(args,"--microfone")>=0,on=Array.IndexOf(args,"--microfone-on")>=0,off=Array.IndexOf(args,"--microfone-off")>=0;
   if(toggle||on||off){Notice(Microphone(on?(bool?)false:off?(bool?)true:null,toggle));return true;}return false;
  }

@@ -15,13 +15,16 @@ if(-not (Test-Path $qrDll)){
 }
 $refs=@('System.Windows.Forms.dll','System.Drawing.dll','System.Web.Extensions.dll',(Join-Path $framework 'System.Runtime.dll'),(Join-Path $framework 'WPF\UIAutomationClient.dll'),(Join-Path $framework 'WPF\UIAutomationTypes.dll'),(Join-Path $framework 'WPF\WindowsBase.dll'),(Join-Path $env:WINDIR 'System32\WinMetadata\Windows.Foundation.winmd'),(Join-Path $env:WINDIR 'System32\WinMetadata\Windows.System.winmd'))
 $refs+=(Join-Path $framework 'System.Runtime.InteropServices.WindowsRuntime.dll')
+$refs+=(Join-Path $framework 'WPF\PresentationCore.dll')
 $refs+=@('ApplicationModel','Devices','Networking','Storage'|ForEach-Object {Join-Path $env:WINDIR ('System32\WinMetadata\Windows.'+$_+'.winmd')})
 $parameters=@('/nologo','/target:winexe','/platform:x64','/optimize+',('/win32manifest:'+(Join-Path $root 'src\app.manifest')),('/out:'+$target))
 $parameters+=@(('/win32icon:'+(Join-Path $root 'assets\PhoneDeck.ico')))
 $parameters+=@($refs|ForEach-Object {'/reference:'+$_})
 $parameters+=@(('/reference:'+$qrDll),('/resource:'+$qrDll+',PhoneDeck.QRCoder.dll'))
+$icons=@{'theme-sun.svg'='sun';'theme-moon.svg'='moon';'icon-settings.svg'='settings';'icon-record.svg'='record';'icon-stop.svg'='stop';'icon-close.svg'='close'}
+foreach($file in $icons.Keys){$parameters+=('/resource:'+(Join-Path $root ('assets\'+$file))+',PhoneDeck.Icons.'+$icons[$file]+'.svg')}
 $parameters+=@(Get-ChildItem (Join-Path $root 'src') -Filter '*.cs'|ForEach-Object {$_.FullName})
 & (Join-Path $framework 'csc.exe') @parameters
 if($LASTEXITCODE){throw 'Compilation failed'}
-[pscustomobject]@{Version=(Get-Item $target).VersionInfo.FileVersion;ExecutableHash=(Get-FileHash $target).Hash;Sources=@(Get-ChildItem (Join-Path $root 'src') -File|Get-FileHash|Select-Object @{n='File';e={Split-Path $_.Path -Leaf}},Hash)}|ConvertTo-Json -Depth 6|Set-Content (Join-Path $OutputDirectory 'build.json') -Encoding UTF8
+[pscustomobject]@{Version=(Get-Item $target).VersionInfo.FileVersion;ExecutableHash=(Get-FileHash $target).Hash;Sources=@(Get-ChildItem (Join-Path $root 'src') -File|Get-FileHash|Select-Object @{n='File';e={Split-Path $_.Path -Leaf}},Hash);Assets=@(Get-ChildItem (Join-Path $root 'assets') -Filter '*.svg'|Get-FileHash|Select-Object @{n='File';e={Split-Path $_.Path -Leaf}},Hash)}|ConvertTo-Json -Depth 6|Set-Content (Join-Path $OutputDirectory 'build.json') -Encoding UTF8
 Write-Output $target

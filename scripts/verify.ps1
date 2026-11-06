@@ -7,10 +7,10 @@ $build=Get-Content (Join-Path $directory 'build.json') -Raw|ConvertFrom-Json
 if((Get-FileHash $exe).Hash -ne $build.ExecutableHash){throw 'Artifact hash differs from build manifest'}
 $results=@()
 $recordPath=Join-Path $directory ('build-'+($build.Version.Split('.')[-1])+'.local.json')
-$record=[ordered]@{Product='PhoneDeck';Version=$build.Version;Build=[int]$build.Version.Split('.')[-1];State='testing';ExecutableHash=$build.ExecutableHash;Sources=$build.Sources;Tests=$results;CallsTested=$false;NativeAudioBackend=$true;AudioImplemented=$false;AudioValidated=$false}
+$record=[ordered]@{Product='PhoneDeck';Version=$build.Version;Build=[int]$build.Version.Split('.')[-1];State='testing';ExecutableHash=$build.ExecutableHash;Sources=$build.Sources;Tests=$results;CallsTested=$false;RecordingImplemented=$true;RecordingTestAudio='synthetic';NativeAudioBackend=$true;AudioImplemented=$false;AudioValidated=$false}
 $shell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
 try{
- foreach($name in @('Test-Window','Test-HfpProtocol','Test-SystemHfp','Test-CallReadiness','Test-LocalSetup')){
+ foreach($name in @('Test-Window','Test-HfpProtocol','Test-SystemHfp','Test-VoiceSettings','Test-Recording','Test-RecordingUi','Test-CallReadiness','Test-LocalSetup')){
   & $shell -NoProfile -STA -ExecutionPolicy Bypass -File (Join-Path $root ('tests\'+$name+'.ps1')) -Executable $exe
   if($LASTEXITCODE){throw ($name+' failed')}
   $results+=@{Name=$name;Result='passed'}
